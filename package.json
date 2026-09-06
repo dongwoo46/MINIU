@@ -11,6 +11,7 @@
     "start": "next start",
     "lint": "eslint app next.config.ts",
     "typecheck": "tsc --noEmit",
+    "security:env": "node tools/check-env-files.js",
     "agents:check": "node tools/sync-agents.js --check",
     "agents:sync": "node tools/sync-agents.js --write",
     "docs:check": "node tools/docs.js check",
