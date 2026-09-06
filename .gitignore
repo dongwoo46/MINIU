@@ -1,0 +1,61 @@
+# Dependencies
+node_modules/
+
+# Next.js
+.next/
+out/
+next-env.d.ts
+
+# Build and test output
+dist/
+build/
+coverage/
+.nyc_output/
+*.tsbuildinfo
+
+# Framework and tool caches
+.turbo/
+.cache/
+.parcel-cache/
+.eslintcache
+.swc/
+
+# Environment variables and local secrets
+.env
+.env.*
+!.env.example
+*.pem
+
+# Deployment
+.vercel/
+.netlify/
+
+# Package manager logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.log
+
+# Editors
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Operating system files
+.DS_Store
+.AppleDouble
+.LSOverride
+Thumbs.db
+Desktop.ini
+
+# Local project tooling
+.serena/
+.devkit/
+
+# Generated project records
+docs/run-log/
+docs/performance/
+docs/proposals/

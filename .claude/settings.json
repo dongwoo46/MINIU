@@ -1,0 +1,6 @@
+{
+  "model": "sonnet",
+  "enabledPlugins": {
+    "devkit@allosta-internal": false
+  }
+}

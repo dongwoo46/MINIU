@@ -1,0 +1,20 @@
+# tools/sync-agents.js가 생성합니다.
+model = "gpt-5.3-codex"
+model_reasoning_effort = "medium"
+
+[features]
+plugins = false
+hooks = false
+multi_agent = true
+
+[agents.code-reviewer]
+description = "변경분을 기능 문서와 대조해 정확성, 보안, 오류 처리, 복잡도와 검증 누락을 찾는다."
+config_file = "agents/code-reviewer.toml"
+
+[agents.developer]
+description = "기능명세와 기술설계를 기준으로 코드를 구현하고 기존 검사로 동작을 확인한다."
+config_file = "agents/developer.toml"
+
+[agents.planner]
+description = "상위기획, PRD, 기능명세, 기술설계를 작성·검토하고 제품 결정의 빈칸과 구현 위험을 찾는다."
+config_file = "agents/planner.toml"
