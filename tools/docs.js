@@ -42,15 +42,19 @@ function relative(file) {
 }
 
 function parseFrontmatter(source) {
-  if (!source.startsWith("---\n")) return { meta: null, body: source };
-  const end = source.indexOf("\n---\n", 4);
+  if (source.charCodeAt(0) === 0xfeff) source = source.slice(1);
+  const start = /^---\r?\n/.exec(source);
+  if (!start) return { meta: null, body: source };
+  const end = source.indexOf("\n---", start[0].length);
   if (end < 0) return { meta: null, body: source };
+  const close = /^\n---\r?\n/.exec(source.slice(end));
+  if (!close) return { meta: null, body: source };
   const meta = {};
-  for (const line of source.slice(4, end).split("\n")) {
+  for (const line of source.slice(start[0].length, end).replace(/\r/g, "").split("\n")) {
     const match = /^([a-z_]+):\s*(.*)$/i.exec(line);
     if (match) meta[match[1]] = match[2].trim();
   }
-  return { meta, body: source.slice(end + 5) };
+  return { meta, body: source.slice(end + close[0].length) };
 }
 
 function markdownFiles(dir) {
@@ -138,11 +142,12 @@ function commandInit(args) {
 }
 
 function commandCheck(args) {
+  const isManagedFeatureDoc = (file) => ["prd.md", "spec.md", "tech.md"].includes(path.basename(file));
   const files = args.length
     ? args.map((file) => path.resolve(ROOT, file))
     : [
         ...markdownFiles(path.join(ROOT, "docs", "planning")),
-        ...markdownFiles(path.join(ROOT, "docs", "features")),
+        ...markdownFiles(path.join(ROOT, "docs", "features")).filter(isManagedFeatureDoc),
       ];
   if (!files.length) {
     console.log("검사할 기획 문서가 없습니다.");

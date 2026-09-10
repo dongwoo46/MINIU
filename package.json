@@ -9,7 +9,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint app next.config.ts",
+    "lint": "eslint app shared entities widgets next.config.ts",
     "typecheck": "tsc --noEmit",
     "security:env": "node tools/check-env-files.js",
     "agents:check": "node tools/sync-agents.js --check",
@@ -24,11 +24,13 @@
     "react-dom": "19.2.8"
   },
   "devDependencies": {
+    "@tailwindcss/postcss": "^4.3.3",
     "@types/node": "^24.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "eslint": "^9.0.0",
     "eslint-config-next": "16.3.4",
+    "tailwindcss": "^4.3.3",
     "typescript": "6.0.3"
   }
 }
