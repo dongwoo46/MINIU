@@ -1,5 +1,4 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "installCommand": "node -e \"const fs=require('fs');if(!fs.existsSync('CLAUDE.md'))fs.writeFileSync('CLAUDE.md','');\" && npm ci",
   "buildCommand": "npm run build"
 }
