@@ -38,7 +38,7 @@ type MeData = {
 
 type ApiSuccess<T> = { ok: true; data: T };
 type ApiFailure = { ok: false; error: { code: string; message: string; details: Record<string, string> | null } };
-type AuthMode = "login" | "signup" | "verify";
+type AuthMode = "login" | "signup";
 type PreQuestionKey = "likes" | "dislikes" | "tendencies" | "habits" | "values";
 
 const requiredConsentItems = [
@@ -93,8 +93,6 @@ export default function Home() {
   const [mode, setMode] = useState<AuthMode>("login");
   const [me, setMe] = useState<MeData | null>(null);
   const [pending, setPending] = useState(false);
-  const [authEmail, setAuthEmail] = useState("");
-  const [devVerificationCode, setDevVerificationCode] = useState("");
   const [invitation, setInvitation] = useState<PublicInvitation | null>(null);
   const [inviteLink, setInviteLink] = useState("");
   const [inviteCodeInput, setInviteCodeInput] = useState("");
@@ -111,7 +109,6 @@ export default function Home() {
     birthDate: "",
     email: "",
     password: "",
-    code: "",
     terms: false,
     privacyRequired: false,
     processorTransferNotice: false,
@@ -146,6 +143,22 @@ export default function Home() {
       })
       .catch(() => undefined);
   }, [me]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const authMessage = params.get("authMessage");
+    const authState = params.get("auth");
+    if (authMessage) {
+      setToast(authMessage);
+      if (authState === "verified" || authState === "verify_error") {
+        setMode("login");
+      }
+      params.delete("auth");
+      params.delete("authMessage");
+      const next = `${window.location.pathname}${params.toString() ? `?${params}` : ""}`;
+      window.history.replaceState({}, "", next);
+    }
+  }, []);
 
   const showPreview = () => setToast("지금은 화면 프리뷰예요. 입력한 내용은 전송·저장되지 않아요.");
   const allRequiredChecked = requiredConsentItems.every((item) => form[item.id]);
@@ -196,7 +209,7 @@ export default function Home() {
       return;
     }
     try {
-      const data = await requestJson<{ user: PublicUser; devVerificationCode: string }>("/api/miniu/auth/signup", {
+      await requestJson<{ user: PublicUser }>("/api/miniu/auth/signup", {
         name: form.name,
         birthDate: form.birthDate,
         email: form.email,
@@ -209,38 +222,10 @@ export default function Home() {
         age14OrOver: form.age14OrOver,
         marketing: form.marketing,
       });
-      setAuthEmail(data.user.email);
-      setDevVerificationCode(data.devVerificationCode);
-      setMode("verify");
-      setToast("인증 코드를 보냈어요. 개발 환경에서는 화면의 코드를 입력하세요.");
+      setMode("login");
+      setToast("회원가입이 완료됐어요. 이메일 인증 링크를 확인해 주세요.");
     } catch (error) {
       setToast(error instanceof Error ? error.message : "회원가입에 실패했어요.");
-    }
-  }
-
-  async function submitVerify(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    try {
-      await requestJson<{ user: PublicUser }>("/api/miniu/auth/verify", {
-        email: authEmail || form.email,
-        code: form.code,
-      });
-      await loadMe();
-      setToast("이메일 인증이 완료됐어요.");
-    } catch (error) {
-      setToast(error instanceof Error ? error.message : "인증에 실패했어요.");
-    }
-  }
-
-  async function resendVerification() {
-    try {
-      const data = await requestJson<{ devVerificationCode: string }>("/api/miniu/auth/resend-verification", {
-        email: authEmail || form.email,
-      });
-      setDevVerificationCode(data.devVerificationCode);
-      setToast("인증 코드를 다시 보냈어요.");
-    } catch (error) {
-      setToast(error instanceof Error ? error.message : "재발송에 실패했어요.");
     }
   }
 
@@ -255,8 +240,8 @@ export default function Home() {
       setToast("로그인됐어요.");
     } catch (error) {
       if (error instanceof Error && error.message.includes("verification")) {
-        setAuthEmail(form.email);
-        setMode("verify");
+        setToast("이메일 인증이 필요해요. 인증 후 로그인해 주세요.");
+        return;
       }
       setToast(error instanceof Error ? error.message : "로그인에 실패했어요.");
     }
@@ -361,16 +346,6 @@ export default function Home() {
             <TextField label="비밀번호" type="password" value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} required />
             <Button type="submit" fullWidth disabled={pending}>로그인</Button>
             <button className="auth-link" type="button" onClick={() => setMode("signup")}>새 계정 만들기</button>
-          </form>
-        )}
-        {mode === "verify" && (
-          <form className="auth-panel" onSubmit={submitVerify}>
-            <AuthHeading title="이메일 인증" description={`${authEmail || form.email || "가입 이메일"}로 보낸 6자리 코드를 입력하세요.`} />
-            {devVerificationCode && <Surface className="auth-code">개발 인증 코드 <strong>{devVerificationCode}</strong></Surface>}
-            <TextField label="인증 코드" inputMode="numeric" maxLength={6} value={form.code} onChange={(event) => setForm({ ...form, code: event.target.value })} required />
-            <Button type="submit" fullWidth disabled={pending}>인증 완료</Button>
-            <button className="auth-link" type="button" onClick={resendVerification}>인증 코드 다시 받기</button>
-            <button className="auth-link" type="button" onClick={() => setMode("login")}>로그인으로 돌아가기</button>
           </form>
         )}
         <Toast message={toast} onDismiss={() => setToast("")} />
