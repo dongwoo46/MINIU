@@ -268,6 +268,11 @@ img, .minimi-avatar { image-rendering: pixelated; }
 .signup-verify-button { box-sizing: border-box; flex: 0 0 80px; width: 80px; display: flex; align-items: center; justify-content: center; height: 36px; padding: 0 8px; border: 2px solid var(--color-common-100); background: #d8dee9; color: var(--color-text-primary); filter: drop-shadow(1px 1px 0 rgba(0, 0, 0, 0.2)); white-space: nowrap; cursor: pointer; }
 .signup-verify-button:disabled { opacity: 1; background: #d8dee9; border-color: var(--color-common-100); filter: drop-shadow(1px 1px 0 rgba(0, 0, 0, 0.2)); color: var(--color-text-disabled); cursor: not-allowed; }
 
+/* Partner info screen (Figma node 135:40544, "create_1") */
+.partner-info-gender { display: flex; gap: 6px; width: 100%; }
+.partner-info-gender-option { flex: 1 1 0%; height: 36px; display: flex; align-items: center; justify-content: center; border: 2px solid var(--color-border-primary); background: #f1f5f9; font: normal 400 var(--text-label-kr-size)/var(--text-label-kr-lh) var(--font-pixel-kr); letter-spacing: var(--text-label-kr-ls); color: var(--color-text-primary); cursor: pointer; }
+.partner-info-gender-option.is-selected { background: linear-gradient(180deg, var(--color-common-100) 0%, #accef3 55%, var(--color-primary-blue) 100%); }
+
 /* Signup consent popup sheet (Figma node 135:40273, "popup sheet") */
 .signup-consent-dimmed { position: fixed; inset: 0; margin: auto; width: min(100%, var(--shell-width)); z-index: 20; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding: var(--space-24) 0; background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(2px); }
 .signup-consent-container { display: flex; justify-content: center; width: 100%; padding: 0 var(--space-16); }

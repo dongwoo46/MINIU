@@ -40,7 +40,8 @@ type MeData = {
 
 type ApiSuccess<T> = { ok: true; data: T };
 type ApiFailure = { ok: false; error: { code: string; message: string; details: Record<string, string> | null } };
-type AuthMode = "login" | "signup" | "verify";
+type AuthMode = "login" | "signup" | "verify" | "partnerInfo";
+type PartnerGender = "male" | "female";
 type PreQuestionKey = "likes" | "dislikes" | "tendencies" | "habits" | "values";
 
 const requiredConsentItems = [
@@ -92,6 +93,10 @@ const MOCK_EMAIL_CODE = "123456";
 const EMAIL_CODE_SECONDS = 300;
 type EmailVerifyStatus = "idle" | "pending" | "verified";
 
+function formatBirthDisplay(digits: string) {
+  return [digits.slice(0, 4), digits.slice(4, 6), digits.slice(6, 8)].filter(Boolean).join(".");
+}
+
 function formatCountdown(totalSeconds: number) {
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
@@ -112,6 +117,9 @@ export default function Home() {
   const [mode, setMode] = useState<AuthMode>("login");
   const [showPassword, setShowPassword] = useState(false);
   const [birthDigits, setBirthDigits] = useState("");
+  const [partnerName, setPartnerName] = useState("");
+  const [partnerGender, setPartnerGender] = useState<PartnerGender | null>(null);
+  const [partnerBirthDigits, setPartnerBirthDigits] = useState("");
   const [showConsentSheet, setShowConsentSheet] = useState(false);
   const [emailVerifyStatus, setEmailVerifyStatus] = useState<EmailVerifyStatus>("idle");
   const [emailVerifyCode, setEmailVerifyCode] = useState("");
@@ -210,9 +218,6 @@ export default function Home() {
   }
 
   const showPreview = () => setToast("지금은 화면 프리뷰예요. 입력한 내용은 전송·저장되지 않아요.");
-  function formatBirthDisplay(digits: string) {
-    return [digits.slice(0, 4), digits.slice(4, 6), digits.slice(6, 8)].filter(Boolean).join(".");
-  }
   function handleBirthDateChange(value: string) {
     const digits = value.replace(/\D/g, "").slice(0, 8);
     setBirthDigits(digits);
@@ -398,7 +403,7 @@ export default function Home() {
 
   if (!me) {
     return (
-      <AuthShell hideTopBar={mode === "login" || mode === "signup"} mainClassName={mode === "login" || mode === "signup" ? "login-main" : undefined}>
+      <AuthShell hideTopBar={mode === "login" || mode === "signup" || mode === "partnerInfo"} mainClassName={mode === "login" || mode === "signup" || mode === "partnerInfo" ? "login-main" : undefined}>
         {mode === "signup" && (
           <div className="login-screen signup-screen">
             <Image src="/login/bg-decor.png" alt="" width={404} height={404} className="login-bg-decor" priority aria-hidden />
@@ -560,8 +565,45 @@ export default function Home() {
                     <span className="text-label-en">LOGIN ▶</span>
                   </Button>
                   <button className="login-signup-link text-label-kr" type="button" onClick={() => setMode("signup")}>새 계정 만들기</button>
+                  {process.env.NODE_ENV !== "production" && (
+                    <button className="auth-link" type="button" onClick={() => setMode("partnerInfo")}>연인 정보 화면 미리보기 (dev)</button>
+                  )}
                 </div>
               </form>
+            </div>
+          </div>
+        )}
+        {mode === "partnerInfo" && (
+          <div className="login-screen">
+            <Image src="/login/bg-decor.png" alt="" width={404} height={404} className="login-bg-decor" priority aria-hidden />
+            <span className="login-logo text-display-m">MINIU</span>
+            <div className="login-card">
+              <div className="login-panel">
+                <AuthHeading title="연인의 정보를 알려주세요" description="기본 정보를 알려주세요" />
+                <div className="login-fields">
+                  <div className="login-field">
+                    <TextField label="이름" placeholder="연인의 이름을 알려주세요" value={partnerName} onChange={(event) => setPartnerName(event.target.value)} required />
+                  </div>
+                  <div className="login-field">
+                    <div className="text-field flex min-w-0 flex-col gap-2 w-full">
+                      <label>성별</label>
+                      <div className="partner-info-gender">
+                        <button type="button" className={partnerGender === "male" ? "partner-info-gender-option is-selected" : "partner-info-gender-option"} onClick={() => setPartnerGender("male")}>남성</button>
+                        <button type="button" className={partnerGender === "female" ? "partner-info-gender-option is-selected" : "partner-info-gender-option"} onClick={() => setPartnerGender("female")}>여성</button>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="login-field">
+                    <TextField label="생년월일" inputMode="numeric" maxLength={10} placeholder="yyyy.mm.dd" value={formatBirthDisplay(partnerBirthDigits)} onChange={(event) => setPartnerBirthDigits(event.target.value.replace(/\D/g, "").slice(0, 8))} required />
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="login-actions">
+              <Button type="button" fullWidth className="login-submit" onClick={showPreview}>
+                <span className="text-label-en">NEXT ▶</span>
+              </Button>
+              <button className="login-signup-link text-label-kr" type="button" onClick={() => setMode("login")}>로그인으로 돌아가기</button>
             </div>
           </div>
         )}
