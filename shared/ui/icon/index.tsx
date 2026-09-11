@@ -12,6 +12,9 @@ const paths = {
   heart: "M12 20 3 11V5h6l3 3 3-3h6v6z",
   close: "m5 5 14 14M19 5 5 19",
   sparkle: "M12 2v5l5 5-5 5v5M2 12h5l5-5 5 5h5M7 12l5 5 5-5",
+  calendar: "M4 5h16v14H4zM4 9h16M8 3v4M16 3v4",
+  eye: "M2 12l5-5h10l5 5-5 5H7zM11 11h2v2h-2z",
+  "eye-off": "M2 12l5-5h10l5 5-5 5H7zM11 11h2v2h-2zM4 4l16 16",
 } as const;
 export type IconName = keyof typeof paths;
 export function Icon({ name, ...props }: SVGProps<SVGSVGElement> & { name: IconName }) {

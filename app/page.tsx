@@ -3,6 +3,7 @@ import Image from "next/image";
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
 import type { PreviewTab } from "@/shared/config/design-system";
 import { Button } from "@/shared/ui/button";
+import { Icon } from "@/shared/ui/icon";
 import { Surface } from "@/shared/ui/surface";
 import { TextField } from "@/shared/ui/text-field";
 import { Toast } from "@/shared/ui/toast";
@@ -39,7 +40,7 @@ type MeData = {
 
 type ApiSuccess<T> = { ok: true; data: T };
 type ApiFailure = { ok: false; error: { code: string; message: string; details: Record<string, string> | null } };
-type AuthMode = "login" | "signup" | "verify";
+type AuthMode = "login" | "signup" | "consent" | "verify";
 type PreQuestionKey = "likes" | "dislikes" | "tendencies" | "habits" | "values";
 
 const requiredConsentItems = [
@@ -92,6 +93,7 @@ export default function Home() {
   const [tab, setTab] = useState<PreviewTab>("home");
   const [toast, setToast] = useState("");
   const [mode, setMode] = useState<AuthMode>("login");
+  const [showPassword, setShowPassword] = useState(false);
   const [me, setMe] = useState<MeData | null>(null);
   const [pending, setPending] = useState(false);
   const [authEmail, setAuthEmail] = useState("");
@@ -112,6 +114,7 @@ export default function Home() {
     birthDate: "",
     email: "",
     password: "",
+    passwordConfirm: "",
     code: "",
     terms: false,
     privacyRequired: false,
@@ -166,6 +169,8 @@ export default function Home() {
     }
     return age < 14;
   }, [form.birthDate]);
+  const passwordsMatch = form.password.length > 0 && form.password === form.passwordConfirm;
+  const signupFieldsComplete = Boolean(form.name && form.birthDate && form.email && form.password && passwordsMatch) && !under14;
 
   async function requestJson<T>(path: string, body?: Record<string, unknown>, method: "POST" | "PATCH" = "POST"): Promise<T> {
     setPending(true);
@@ -326,14 +331,54 @@ export default function Home() {
 
   if (!me) {
     return (
-      <AuthShell hideTopBar={mode === "login"} mainClassName={mode === "login" ? "login-main" : undefined}>
+      <AuthShell hideTopBar={mode === "login" || mode === "signup"} mainClassName={mode === "login" || mode === "signup" ? "login-main" : undefined}>
         {mode === "signup" && (
+          <div className="login-screen signup-screen">
+            <Image src="/login/bg-decor.png" alt="" width={404} height={404} className="login-bg-decor" priority aria-hidden />
+            <span className="login-logo text-display-m">MINIU</span>
+            <div className="login-card">
+              <div className="login-panel signup-panel">
+                <AuthHeading title="회원가입" description={"이메일 인증과 필수 동의를\n완료해주세요"} />
+                <div className="login-fields signup-fields">
+                  <div className="login-field">
+                    <TextField label="닉네임" placeholder="닉네임을 입력해주세요" value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} required />
+                  </div>
+                  <div className="login-field login-field--date">
+                    <TextField label="생년월일" type="date" value={form.birthDate} onChange={(event) => setForm({ ...form, birthDate: event.target.value })} error={under14 ? "만 14세 미만은 가입할 수 없어요." : undefined} required />
+                    <Icon name="calendar" width={16} height={16} className="login-field--date-icon" />
+                  </div>
+                  <div className="login-field login-field--email">
+                    <div className="text-field flex flex-col gap-2">
+                      <label htmlFor="signup-email" className="text-xs font-bold">이메일</label>
+                      <div className="login-field--row">
+                        <input id="signup-email" type="email" placeholder="이메일을 입력해주세요" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} required />
+                        <button type="button" className="signup-verify-button text-label-kr" onClick={() => setToast("이메일 인증은 가입 완료 후 진행돼요.")}>이메일 인증</button>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="login-field login-field--password">
+                    <TextField label="비밀번호" type={showPassword ? "text" : "password"} placeholder="비밀번호를 입력해주세요" value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} hint="8~16자, 숫자와 특수문자 포함" required />
+                    <button type="button" className="signup-password-toggle" onClick={() => setShowPassword((value) => !value)} aria-label={showPassword ? "비밀번호 숨기기" : "비밀번호 보기"}>
+                      <Icon name={showPassword ? "eye" : "eye-off"} width={16} height={16} />
+                    </button>
+                  </div>
+                  <div className="login-field">
+                    <TextField label="비밀번호 확인" type="password" placeholder="비밀번호를 한번 더 입력해주세요" value={form.passwordConfirm} onChange={(event) => setForm({ ...form, passwordConfirm: event.target.value })} error={form.passwordConfirm && form.passwordConfirm !== form.password ? "비밀번호가 일치하지 않아요" : undefined} required />
+                  </div>
+                </div>
+                <div className="login-actions">
+                  <Button type="button" fullWidth disabled={!signupFieldsComplete} className="login-submit" onClick={() => setMode("consent")}>
+                    <span className="text-label-en">DONE ▶</span>
+                  </Button>
+                  <button className="login-signup-link text-label-kr" type="button" onClick={() => setMode("login")}>이미 계정이 있어요</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+        {mode === "consent" && (
           <form className="auth-panel" onSubmit={submitSignup}>
-            <AuthHeading title="회원가입" description="이메일 인증과 필수 동의까지 완료해야 MINIU를 사용할 수 있어요." />
-            <TextField label="닉네임" value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} required />
-            <TextField label="생년월일" type="date" value={form.birthDate} onChange={(event) => setForm({ ...form, birthDate: event.target.value })} error={under14 ? "만 14세 미만은 가입할 수 없어요." : undefined} required />
-            <TextField label="이메일" type="email" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} required />
-            <TextField label="비밀번호" type="password" value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} hint="8~16자, 숫자와 특수문자 포함" required />
+            <AuthHeading title="필수 동의" description="약관과 개인정보 처리방침에 동의하면 가입이 완료돼요." />
             <Surface className="auth-consents">
               <label className="auth-check auth-check--all">
                 <input
@@ -352,7 +397,7 @@ export default function Home() {
               <ConsentItem checked={form.marketing} label={marketingConsent.label} detail={marketingConsent.detail} onChange={(checked) => setForm({ ...form, marketing: checked })} />
             </Surface>
             <Button type="submit" fullWidth disabled={pending || !allRequiredChecked || under14}>가입하고 인증하기</Button>
-            <button className="auth-link" type="button" onClick={() => setMode("login")}>이미 계정이 있어요</button>
+            <button className="auth-link" type="button" onClick={() => setMode("signup")}>이전으로</button>
           </form>
         )}
         {mode === "login" && (

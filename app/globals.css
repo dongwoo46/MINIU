@@ -226,6 +226,21 @@ img, .minimi-avatar { image-rendering: pixelated; }
 .login-submit.button { min-height: 36px; border-width: 2px; border-color: var(--color-border-primary); background: linear-gradient(180deg, var(--color-common-100) 0%, rgba(243, 126, 178, 0.5) 55%, var(--color-accent-pink) 100%); box-shadow: none; }
 .login-submit .text-label-en { color: var(--color-border-primary); }
 .login-signup-link { min-height: 36px; display: flex; align-items: center; justify-content: center; border: 2px solid var(--color-common-100); background: #d8dee9; color: var(--color-text-primary); filter: drop-shadow(2px 2px 0 rgba(0, 0, 0, 0.08)); }
+
+/* Signup screen (Figma node 135:16159) — reuses .login-* layout, adds field decorations. */
+.signup-screen { overflow-y: auto; }
+.login-field--row { display: flex; gap: 4px; align-items: center; }
+.login-field--row input { flex: 1 1 0%; min-width: 0; }
+.login-field--date { position: relative; }
+.login-field--date .text-field input { padding-right: 34px; }
+.login-field--date .text-field input::-webkit-calendar-picker-indicator { opacity: 0; }
+.login-field--date .text-field input:invalid { color: var(--color-text-quinary); }
+.login-field--date-icon { position: absolute; right: 10px; top: 24px; height: 36px; display: flex; align-items: center; color: var(--color-text-secondary); pointer-events: none; }
+.login-field--password { position: relative; }
+.login-field--password .text-field input { padding-right: 34px; }
+.login-field--password .text-field small { font: normal 400 var(--text-caption-s-size)/var(--text-caption-s-lh) var(--font-pixel-kr); letter-spacing: var(--text-caption-s-ls); color: var(--color-text-quaternary); margin-top: -4px; }
+.signup-password-toggle { position: absolute; right: 10px; top: 24px; height: 36px; display: flex; align-items: center; border: 0; background: transparent; padding: 0; color: var(--color-text-secondary); cursor: pointer; }
+.signup-verify-button { box-sizing: border-box; display: flex; align-items: center; justify-content: center; height: 36px; padding: 0 8px; border: 2px solid var(--color-common-100); background: #d8dee9; color: var(--color-text-primary); filter: drop-shadow(1px 1px 0 rgba(0, 0, 0, 0.2)); white-space: nowrap; cursor: pointer; }
 .auth-consents { display: grid; gap: var(--space-12); padding: var(--space-16); }
 .auth-consent-item { display: grid; gap: var(--space-4); }
 .auth-check { display: grid; grid-template-columns: 18px 1fr; gap: var(--space-8); align-items: start; font-size: 11px; line-height: 1.45; }
