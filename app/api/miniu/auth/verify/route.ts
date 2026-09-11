@@ -1,44 +1,35 @@
-import { createAppSession, getProfileByEmail, getProfileById, publicUser, setSessionCookie } from "@/app/lib/miniu/auth";
-import { logEvent } from "@/app/lib/miniu/facts";
+import { createAppSession, getProfileById, publicUser, setSessionCookie } from "@/app/lib/miniu/auth";
 import { fail, ok } from "@/app/lib/miniu/http";
-import { updateDb } from "@/app/lib/miniu/store";
 import { patchRows } from "@/app/lib/miniu/supabase";
-import { consumeVerificationCode, findActiveVerificationCode } from "@/app/lib/miniu/supabase-auth";
-import { ApiError, assertObject, normalizeEmail, stringField } from "@/app/lib/miniu/validation";
+import { ApiError, assertObject, optionalStringField } from "@/app/lib/miniu/validation";
+import { verifySignupToken } from "@/app/lib/miniu/supabase-auth";
 
 export async function POST(request: Request) {
   try {
     const body = assertObject(await request.json());
-    const email = normalizeEmail(stringField(body, "email"));
-    const code = stringField(body, "code");
+    const token = optionalStringField(body, "token");
+    const tokenHash = optionalStringField(body, "tokenHash") ?? optionalStringField(body, "token_hash");
+    const type = optionalStringField(body, "type");
 
-    const profile = await getProfileByEmail(email);
-    if (!profile) {
-      return Response.json({ ok: false, error: { code: "UNAUTHORIZED", message: "Invalid verification code.", details: null } }, { status: 401 });
-    }
-    if (profile.emailVerifiedAt) {
-      return Response.json({ ok: false, error: { code: "CONFLICT", message: "Email is already verified.", details: null } }, { status: 409 });
-    }
-
-    const verificationCode = await findActiveVerificationCode(profile.id, code);
-    if (!verificationCode) {
-      return Response.json({ ok: false, error: { code: "UNAUTHORIZED", message: "Invalid verification code.", details: null } }, { status: 401 });
+    const userId = await verifySignupToken({
+      token,
+      tokenHash,
+      type: type && ["signup", "email", "magiclink"].includes(type) ? (type as "signup" | "email" | "magiclink") : "signup",
+    });
+    if (!userId) {
+      return Response.json({ ok: false, error: { code: "UNAUTHORIZED", message: "Invalid verification token.", details: null } }, { status: 401 });
     }
 
-    await consumeVerificationCode(verificationCode.id);
-    await patchRows("profiles", `id=eq.${profile.id}`, {
+    await patchRows("profiles", `id=eq.${userId}`, {
       email_verified_at: new Date().toISOString(),
       onboarding_step: "couple_link",
     });
-    const user = await getProfileById(profile.id);
+    const user = await getProfileById(userId);
     if (!user) {
       throw new ApiError(500, "INTERNAL_ERROR", "Verified user profile was not found.");
     }
 
     const sessionId = await createAppSession(user.id);
-    await updateDb((db) => {
-      logEvent(db, { userId: user.id, name: "email_verified" });
-    });
     await setSessionCookie(sessionId);
     return ok({ user: publicUser(user) });
   } catch (error) {

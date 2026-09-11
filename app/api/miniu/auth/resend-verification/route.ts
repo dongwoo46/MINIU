@@ -1,7 +1,7 @@
 import { getProfileByEmail } from "@/app/lib/miniu/auth";
 import { fail, ok } from "@/app/lib/miniu/http";
-import { createVerificationCode, insertVerificationCode } from "@/app/lib/miniu/supabase-auth";
 import { assertObject, normalizeEmail, stringField } from "@/app/lib/miniu/validation";
+import { requestSignupVerificationEmail } from "@/app/lib/miniu/supabase-auth";
 
 export async function POST(request: Request) {
   try {
@@ -17,10 +17,9 @@ export async function POST(request: Request) {
       return Response.json({ ok: false, error: { code: "CONFLICT", message: "Email is already verified.", details: null } }, { status: 409 });
     }
 
-    const verificationCode = createVerificationCode();
-    await insertVerificationCode(user.id, verificationCode);
+    await requestSignupVerificationEmail(user.email);
 
-    return ok({ devVerificationCode: verificationCode });
+    return ok({ ok: true });
   } catch (error) {
     return fail(error);
   }
