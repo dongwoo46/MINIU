@@ -213,7 +213,7 @@ img, .minimi-avatar { image-rendering: pixelated; }
 .login-bg-decor { position: absolute; top: 0; left: -7px; width: 404px; height: 404px; max-width: none; mix-blend-mode: soft-light; opacity: 0.3; transform: rotate(180deg); pointer-events: none; z-index: 0; }
 .login-logo { position: relative; z-index: 1; align-self: flex-start; text-align: left; color: var(--color-common-100); margin-bottom: var(--space-32); }
 .login-card { position: relative; z-index: 1; width: 100%; max-width: 358px; }
-.login-panel { display: grid; gap: 80px; }
+.login-panel { display: grid; gap: 60px; }
 .login-panel .page-heading { margin-bottom: 0; }
 .login-panel .page-heading .eyebrow { display: none; }
 .login-panel .page-heading h1 { font: normal 700 var(--text-heading-l-size)/var(--text-heading-l-lh) var(--font-pixel-kr); letter-spacing: var(--text-heading-l-ls); color: var(--color-text-primary); }
