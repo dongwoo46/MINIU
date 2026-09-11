@@ -67,7 +67,7 @@
 .text-body-l { font: normal 400 var(--text-body-l-size)/var(--text-body-l-lh) var(--font-pixel-kr); letter-spacing: var(--text-body-l-ls); }
 .text-body-m { font: normal 400 var(--text-body-m-size)/var(--text-body-m-lh) var(--font-pixel-kr); letter-spacing: var(--text-body-m-ls); }
 .text-label-kr { font: normal 400 var(--text-label-kr-size)/var(--text-label-kr-lh) var(--font-pixel-kr); letter-spacing: var(--text-label-kr-ls); }
-.text-label-en { font: bold 700 var(--text-label-en-size)/var(--text-label-en-lh) var(--font-pixel-en); letter-spacing: var(--text-label-en-ls); }
+.text-label-en { font: 700 var(--text-label-en-size)/var(--text-label-en-lh) var(--font-pixel-en); letter-spacing: var(--text-label-en-ls); }
 .text-caption-s { font: normal 400 var(--text-caption-s-size)/var(--text-caption-s-lh) var(--font-pixel-kr); letter-spacing: var(--text-caption-s-ls); }
 * { box-sizing: border-box; }
 html, body { margin: 0; min-height: 100%; }
@@ -142,7 +142,7 @@ img, .minimi-avatar { image-rendering: pixelated; }
 .mail-sparkle { position: absolute; top: 20px; right: 30px; color: #a19aba; font-size: 25px; }
 .letter-list { display: grid; gap: var(--space-12); margin-bottom: var(--space-24); }
 .letter-item { display: flex; align-items: center; gap: var(--space-12); padding: var(--space-16) var(--space-12); width: 100%; text-align: left; }
-.letter-item:hover { border-color: #a68485; }
+.letter-item:hover { border-color: var(--color-border-primary); }
 .letter-stamp { display: grid; place-items: center; width: 40px; height: 44px; border: 1px dashed #c9a7ae; background: #f8ebed; color: #a86577; flex-shrink: 0; }
 .letter-content { display: flex; flex-direction: column; gap: var(--space-4); flex: 1; min-width: 0; }
 .letter-sender { font-weight: 700; font-size: 11px; }
@@ -180,7 +180,7 @@ img, .minimi-avatar { image-rendering: pixelated; }
 .toggle input { position: absolute; right: 0; width: 40px; height: 24px; opacity: 0; cursor: pointer; }
 .toggle-track { width: 40px; height: 24px; background: var(--bg-sunken); border: 1px solid var(--border); pointer-events: none; }
 .toggle-track::after { content: ''; display: block; width: 16px; height: 16px; margin: 3px; background: var(--text-muted); transition: transform var(--duration) var(--easing); }
-.toggle input:checked + .toggle-track { background: var(--primary); border-color: #a68485; }
+.toggle input:checked + .toggle-track { background: var(--primary); border-color: var(--color-border-primary); }
 .toggle input:checked + .toggle-track::after { transform: translateX(16px); background: var(--heart); }
 .toggle input:focus-visible + .toggle-track { outline: 3px solid var(--info); outline-offset: 4px; }
 .toggle:has(input:disabled) { opacity: .45; cursor: not-allowed; }
