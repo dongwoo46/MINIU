@@ -94,6 +94,7 @@ export default function Home() {
   const [toast, setToast] = useState("");
   const [mode, setMode] = useState<AuthMode>("login");
   const [showPassword, setShowPassword] = useState(false);
+  const [birthDigits, setBirthDigits] = useState("");
   const [me, setMe] = useState<MeData | null>(null);
   const [pending, setPending] = useState(false);
   const [authEmail, setAuthEmail] = useState("");
@@ -152,6 +153,15 @@ export default function Home() {
   }, [me]);
 
   const showPreview = () => setToast("지금은 화면 프리뷰예요. 입력한 내용은 전송·저장되지 않아요.");
+  function formatBirthDisplay(digits: string) {
+    return [digits.slice(0, 4), digits.slice(4, 6), digits.slice(6, 8)].filter(Boolean).join(".");
+  }
+  function handleBirthDateChange(value: string) {
+    const digits = value.replace(/\D/g, "").slice(0, 8);
+    setBirthDigits(digits);
+    const combined = digits.length === 8 ? `${digits.slice(0, 4)}-${digits.slice(4, 6)}-${digits.slice(6, 8)}` : "";
+    setForm((prev) => ({ ...prev, birthDate: combined }));
+  }
   const allRequiredChecked = requiredConsentItems.every((item) => form[item.id]);
   const under14 = useMemo(() => {
     if (!form.birthDate) {
@@ -343,9 +353,8 @@ export default function Home() {
                   <div className="login-field">
                     <TextField label="닉네임" placeholder="닉네임을 입력해주세요" value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} required />
                   </div>
-                  <div className="login-field login-field--date">
-                    <TextField label="생년월일" type="date" value={form.birthDate} onChange={(event) => setForm({ ...form, birthDate: event.target.value })} error={under14 ? "만 14세 미만은 가입할 수 없어요." : undefined} required />
-                    <Icon name="calendar" width={16} height={16} className="login-field--date-icon" />
+                  <div className="login-field">
+                    <TextField label="생년월일" inputMode="numeric" maxLength={10} placeholder="yyyy.mm.dd" value={formatBirthDisplay(birthDigits)} onChange={(event) => handleBirthDateChange(event.target.value)} error={under14 ? "만 14세 미만은 가입할 수 없어요." : undefined} required />
                   </div>
                   <div className="login-field login-field--email">
                     <div className="text-field flex flex-col gap-2">

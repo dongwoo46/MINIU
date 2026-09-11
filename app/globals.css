@@ -231,11 +231,6 @@ img, .minimi-avatar { image-rendering: pixelated; }
 .signup-screen { overflow-y: auto; }
 .login-field--row { display: flex; gap: 4px; align-items: center; }
 .login-field--row input { flex: 1 1 0%; min-width: 0; }
-.login-field--date { position: relative; }
-.login-field--date .text-field input { padding-right: 34px; }
-.login-field--date .text-field input::-webkit-calendar-picker-indicator { opacity: 0; }
-.login-field--date .text-field input:invalid { color: var(--color-text-quinary); }
-.login-field--date-icon { position: absolute; right: 10px; top: 24px; height: 36px; display: flex; align-items: center; color: var(--color-text-secondary); pointer-events: none; }
 .login-field--password { position: relative; }
 .login-field--password .text-field input { padding-right: 34px; }
 .login-field--password .text-field small { font: normal 400 var(--text-caption-s-size)/var(--text-caption-s-lh) var(--font-pixel-kr); letter-spacing: var(--text-caption-s-ls); color: var(--color-text-quaternary); margin-top: -4px; }
