@@ -1,6 +1,22 @@
 ﻿/* Color palette sourced from Figma "Color" variable collection (node 135:16092). */
 @import "tailwindcss";
 
+/* Silkscreen (SIL OFL 1.1, self-hosted from public/fonts/silkscreen — see README there) */
+@font-face {
+  font-family: 'Silkscreen';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/silkscreen/Silkscreen-Regular.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Silkscreen';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/fonts/silkscreen/Silkscreen-Bold.woff2') format('woff2');
+}
+
 @theme {
   --color-miniu-bg: var(--bg-base);
   --color-miniu-sunken: var(--bg-sunken);
@@ -44,8 +60,8 @@
   /* Figma 디자인 시스템 (node 97:11467, "🎨 Typography" · "🎨 Spacing") — 확정된 타입 스케일/스페이싱.
      spacing/xs·md·lg·xl·xxl(4/8/16/24/32)는 기존 --space-*와 값이 이미 일치, sm(6)만 신규 추가.
      border/radius 규칙: 두꺼운 2px 잉크 테두리 + 각진 모서리(radius 0)를 위 --border-width/--radius에 반영함. */
-  --font-pixel-kr: 'DungGeunMo', var(--font-ui); /* woff2 라이선스 확보 후 public/fonts/에 추가하고 @font-face 등록 전까지는 시스템 폰트로 폴백 */
-  --font-pixel-en: 'Silkscreen', var(--font-ui);
+  --font-pixel-kr: 'DungGeunMo', var(--font-ui); /* 한글 픽셀 폰트 woff2 라이선스 미확보 — 시스템 폰트로 폴백 중 */
+  --font-pixel-en: 'Silkscreen', var(--font-ui); /* public/fonts/silkscreen/에 자체 호스팅된 OFL 폰트, 위 @font-face 참고 */
   --text-display-l-size: 40px; --text-display-l-lh: 130%; --text-display-l-ls: -0.025em;
   --text-display-m-size: 36px; --text-display-m-lh: 130%; --text-display-m-ls: -0.025em;
   --text-title-l-size: 32px; --text-title-l-lh: 134%; --text-title-l-ls: -0.025em;
@@ -188,7 +204,28 @@ img, .minimi-avatar { image-rendering: pixelated; }
 .loading-pixels { color: var(--heart); animation: pixel-pulse 1s steps(2, end) infinite; }
 @keyframes pixel-pulse { 50% { opacity: .35; } }
 .auth-shell main { padding: var(--space-32) var(--space-24); }
+.auth-shell main.login-main { padding: 0; }
 .auth-panel { display: grid; gap: var(--space-16); }
+
+/* Login screen (Figma node 97:12651) — scoped to .login-* so signup/verify/other auth modes are unaffected. */
+.login-screen { position: relative; display: flex; flex-direction: column; align-items: center; min-height: 100%; overflow: hidden; padding: 56px var(--space-24) calc(140px + env(safe-area-inset-bottom)); background: linear-gradient(180deg, var(--color-primary-blue) 0%, var(--color-secondary-blue) 45%, var(--color-common-100) 100%); }
+.login-bg-decor { position: absolute; top: 0; left: -7px; width: 404px; height: 404px; max-width: none; mix-blend-mode: soft-light; opacity: 0.3; transform: rotate(180deg); pointer-events: none; z-index: 0; }
+.login-logo { position: relative; z-index: 1; align-self: flex-start; text-align: left; color: var(--color-common-100); margin-bottom: var(--space-32); }
+.login-card { position: relative; z-index: 1; width: 100%; max-width: 342px; }
+.login-panel { display: grid; gap: 80px; }
+.login-panel .page-heading { margin-bottom: 0; }
+.login-panel .page-heading .eyebrow { display: none; }
+.login-panel .page-heading h1 { font: normal 700 var(--text-heading-l-size)/var(--text-heading-l-lh) var(--font-pixel-kr); letter-spacing: var(--text-heading-l-ls); color: var(--color-text-primary); }
+.login-panel .page-heading p { font: normal 400 var(--text-body-m-size)/var(--text-body-m-lh) var(--font-pixel-kr); letter-spacing: var(--text-body-m-ls); color: var(--color-text-secondary); margin-top: var(--space-8); white-space: pre-line; }
+.login-fields { display: grid; gap: 14px; }
+.login-field { position: relative; }
+.login-field .text-field label { font: normal 400 var(--text-label-kr-size)/var(--text-label-kr-lh) var(--font-pixel-kr); letter-spacing: var(--text-label-kr-ls); color: var(--color-text-secondary); }
+.login-field .text-field input { height: 36px; min-height: 36px; padding: 8px 10px; font: normal 400 var(--text-label-kr-size)/var(--text-label-kr-lh) var(--font-pixel-kr); letter-spacing: var(--text-label-kr-ls); border: 2px solid var(--color-border-primary); border-radius: 0; background: var(--color-common-100); box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05); caret-color: var(--color-accent-pink); }
+.login-field .text-field input::placeholder { font: normal 400 var(--text-label-kr-size)/var(--text-label-kr-lh) var(--font-pixel-kr); letter-spacing: var(--text-label-kr-ls); color: var(--color-text-quinary); }
+.login-actions { position: fixed; inset: auto 0 0; z-index: 2; margin: auto; display: grid; gap: 6px; width: min(100%, var(--shell-width)); padding: var(--space-16) var(--space-24) max(var(--space-24), env(safe-area-inset-bottom)); background: var(--color-common-100); }
+.login-submit.button { min-height: 36px; border-width: 2px; border-color: var(--color-border-primary); background: linear-gradient(180deg, var(--color-common-100) 0%, rgba(243, 126, 178, 0.5) 55%, var(--color-accent-pink) 100%); box-shadow: none; }
+.login-submit .text-label-en { color: var(--color-border-primary); }
+.login-signup-link { min-height: 36px; display: flex; align-items: center; justify-content: center; border: 2px solid var(--color-common-100); background: #d8dee9; color: var(--color-text-primary); filter: drop-shadow(2px 2px 0 rgba(0, 0, 0, 0.08)); }
 .auth-consents { display: grid; gap: var(--space-12); padding: var(--space-16); }
 .auth-consent-item { display: grid; gap: var(--space-4); }
 .auth-check { display: grid; grid-template-columns: 18px 1fr; gap: var(--space-8); align-items: start; font-size: 11px; line-height: 1.45; }

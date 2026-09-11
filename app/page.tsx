@@ -1,4 +1,5 @@
 "use client";
+import Image from "next/image";
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
 import type { PreviewTab } from "@/shared/config/design-system";
 import { Button } from "@/shared/ui/button";
@@ -325,7 +326,7 @@ export default function Home() {
 
   if (!me) {
     return (
-      <AuthShell>
+      <AuthShell hideTopBar={mode === "login"} mainClassName={mode === "login" ? "login-main" : undefined}>
         {mode === "signup" && (
           <form className="auth-panel" onSubmit={submitSignup}>
             <AuthHeading title="회원가입" description="이메일 인증과 필수 동의까지 완료해야 MINIU를 사용할 수 있어요." />
@@ -355,13 +356,29 @@ export default function Home() {
           </form>
         )}
         {mode === "login" && (
-          <form className="auth-panel" onSubmit={submitLogin}>
-            <AuthHeading title="로그인" description="이메일 인증을 마친 계정만 로그인할 수 있어요." />
-            <TextField label="이메일" type="email" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} required />
-            <TextField label="비밀번호" type="password" value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} required />
-            <Button type="submit" fullWidth disabled={pending}>로그인</Button>
-            <button className="auth-link" type="button" onClick={() => setMode("signup")}>새 계정 만들기</button>
-          </form>
+          <div className="login-screen">
+            <Image src="/login/bg-decor.png" alt="" width={404} height={404} className="login-bg-decor" priority aria-hidden />
+            <span className="login-logo text-display-m">MINIU</span>
+            <div className="login-card">
+              <form className="login-panel" onSubmit={submitLogin}>
+                <AuthHeading title="로그인" description={"이메일 인증을 마친 계정만\n로그인할 수 있어요."} />
+                <div className="login-fields">
+                  <div className="login-field login-field--email">
+                    <TextField label="이메일" type="email" placeholder="이메일을 입력해주세요" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} required />
+                  </div>
+                  <div className="login-field">
+                    <TextField label="비밀번호" type="password" placeholder="비밀번호를 입력해주세요" value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} required />
+                  </div>
+                </div>
+                <div className="login-actions">
+                  <Button type="submit" fullWidth disabled={pending} className="login-submit">
+                    <span className="text-label-en">LOGIN ▶</span>
+                  </Button>
+                  <button className="login-signup-link text-label-kr" type="button" onClick={() => setMode("signup")}>새 계정 만들기</button>
+                </div>
+              </form>
+            </div>
+          </div>
         )}
         {mode === "verify" && (
           <form className="auth-panel" onSubmit={submitVerify}>
@@ -496,15 +513,29 @@ function PreQuestionStep({
   );
 }
 
-function AuthShell({ children, user, onLogout }: { children: ReactNode; user?: PublicUser; onLogout?: () => void }) {
+function AuthShell({
+  children,
+  user,
+  onLogout,
+  hideTopBar,
+  mainClassName,
+}: {
+  children: ReactNode;
+  user?: PublicUser;
+  onLogout?: () => void;
+  hideTopBar?: boolean;
+  mainClassName?: string;
+}) {
   return (
     <div className="site-frame">
       <div className="mobile-shell auth-shell">
-        <header className="top-bar">
-          <span className="wordmark">miniu<span className="wordmark-dot">◆</span></span>
-          {user ? <button className="top-bar-link" type="button" onClick={onLogout}>로그아웃</button> : <span className="top-bar-caption">이메일 인증 가입</span>}
-        </header>
-        <main>{children}</main>
+        {!hideTopBar && (
+          <header className="top-bar">
+            <span className="wordmark">miniu<span className="wordmark-dot">◆</span></span>
+            {user ? <button className="top-bar-link" type="button" onClick={onLogout}>로그아웃</button> : <span className="top-bar-caption">이메일 인증 가입</span>}
+          </header>
+        )}
+        <main className={mainClassName}>{children}</main>
       </div>
     </div>
   );
