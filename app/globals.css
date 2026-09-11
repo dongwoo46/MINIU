@@ -220,7 +220,7 @@ img, .minimi-avatar { image-rendering: pixelated; }
 .login-panel .page-heading p { font: normal 400 var(--text-body-m-size)/var(--text-body-m-lh) var(--font-pixel-kr); letter-spacing: var(--text-body-m-ls); color: var(--color-text-secondary); margin-top: var(--space-8); white-space: pre-line; }
 .login-fields { display: grid; gap: 14px; }
 .login-field { position: relative; }
-.login-field .text-field label { font: normal 400 var(--text-label-kr-size)/var(--text-label-kr-lh) var(--font-pixel-kr); letter-spacing: var(--text-label-kr-ls); color: var(--color-text-secondary); }
+.login-field .text-field label, .login-field .field-group label { font: normal 400 var(--text-label-kr-size)/var(--text-label-kr-lh) var(--font-pixel-kr); letter-spacing: var(--text-label-kr-ls); color: var(--color-text-secondary); }
 .login-field .text-field input { height: 36px; min-height: 36px; padding: 8px 10px; font: normal 400 var(--text-label-kr-size)/var(--text-label-kr-lh) var(--font-pixel-kr); letter-spacing: var(--text-label-kr-ls); border: 2px solid var(--color-border-primary); border-radius: 0; background: var(--color-common-100); box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05); caret-color: var(--color-accent-pink); }
 .login-field .text-field input::placeholder { font: normal 400 var(--text-label-kr-size)/var(--text-label-kr-lh) var(--font-pixel-kr); letter-spacing: var(--text-label-kr-ls); color: var(--color-text-quinary); }
 .login-actions { position: fixed; inset: auto 0 0; z-index: 2; margin: auto; display: grid; gap: 6px; width: min(100%, var(--shell-width)); padding: var(--space-16) var(--space-16) max(var(--space-24), env(safe-area-inset-bottom)); background: var(--color-common-100); }
@@ -231,12 +231,42 @@ img, .minimi-avatar { image-rendering: pixelated; }
 /* Signup screen (Figma node 135:16159) — reuses .login-* layout, adds field decorations. */
 .signup-screen { overflow-y: auto; }
 .login-field--row { display: flex; gap: 4px; align-items: center; }
-.login-field--row input { flex: 1 1 0%; min-width: 0; }
+.login-field--row .field-box { flex: 1 1 0%; min-width: 0; }
+.field-box { box-sizing: border-box; position: relative; display: flex; align-items: center; gap: 4px; height: 36px; padding: 8px 10px; border: 2px solid var(--color-border-primary); background: var(--color-common-100); box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05); }
+.field-box.is-disabled { background: #d8dee9; }
+.field-box-input { flex: 1 1 0%; min-width: 0; appearance: none; -webkit-appearance: none; border: 0; outline: 0; box-shadow: none; border-radius: 0; background: transparent; padding: 0; font: normal 400 var(--text-label-kr-size)/var(--text-label-kr-lh) var(--font-pixel-kr); letter-spacing: var(--text-label-kr-ls); color: var(--color-text-primary); }
+.field-box-input::placeholder { color: var(--color-text-quinary); }
+.field-box-input:disabled, .field-box-input:read-only { background-color: transparent !important; color: var(--color-text-disabled); -webkit-text-fill-color: var(--color-text-disabled); opacity: 1; }
+/* Browser autofill (Chrome/Safari) paints its own background over form inputs — force it back to our white/gray field colors. */
+.login-field .text-field input:-webkit-autofill,
+.login-field .text-field input:-webkit-autofill:hover,
+.login-field .text-field input:-webkit-autofill:focus,
+.login-field .text-field input:autofill,
+.field-box-input:-webkit-autofill,
+.field-box-input:-webkit-autofill:hover,
+.field-box-input:-webkit-autofill:focus,
+.field-box-input:autofill {
+  -webkit-text-fill-color: var(--color-text-primary);
+  -webkit-box-shadow: 0 0 0 1000px var(--color-common-100) inset;
+  box-shadow: 0 0 0 1000px var(--color-common-100) inset;
+  transition: background-color 999999s ease-in-out 0s;
+}
+.field-box.is-disabled .field-box-input:-webkit-autofill,
+.field-box.is-disabled .field-box-input:-webkit-autofill:hover,
+.field-box.is-disabled .field-box-input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--color-text-disabled);
+  -webkit-box-shadow: 0 0 0 1000px #d8dee9 inset;
+}
+.field-box-suffix { flex-shrink: 0; font: normal 400 var(--text-label-kr-size)/var(--text-label-kr-lh) var(--font-pixel-kr); letter-spacing: var(--text-label-kr-ls); color: var(--color-accent-pink); white-space: nowrap; }
+.signup-field-caption { margin-top: var(--space-4); }
+.signup-field-caption--error { color: var(--color-accent-pink); }
+.signup-field-caption--success { color: var(--color-primary-blue); }
 .login-field--password { position: relative; }
 .login-field--password .text-field input { padding-right: 34px; }
 .login-field--password .text-field small { font: normal 400 var(--text-caption-s-size)/var(--text-caption-s-lh) var(--font-pixel-kr); letter-spacing: var(--text-caption-s-ls); color: var(--color-text-quaternary); margin-top: -4px; }
 .signup-password-toggle { position: absolute; right: 10px; top: 24px; height: 36px; display: flex; align-items: center; border: 0; background: transparent; padding: 0; color: var(--color-text-secondary); cursor: pointer; }
-.signup-verify-button { box-sizing: border-box; display: flex; align-items: center; justify-content: center; height: 36px; padding: 0 8px; border: 2px solid var(--color-common-100); background: #d8dee9; color: var(--color-text-primary); filter: drop-shadow(1px 1px 0 rgba(0, 0, 0, 0.2)); white-space: nowrap; cursor: pointer; }
+.signup-verify-button { box-sizing: border-box; flex: 0 0 80px; width: 80px; display: flex; align-items: center; justify-content: center; height: 36px; padding: 0 8px; border: 2px solid var(--color-common-100); background: #d8dee9; color: var(--color-text-primary); filter: drop-shadow(1px 1px 0 rgba(0, 0, 0, 0.2)); white-space: nowrap; cursor: pointer; }
+.signup-verify-button:disabled { opacity: 1; background: #d8dee9; border-color: var(--color-common-100); filter: drop-shadow(1px 1px 0 rgba(0, 0, 0, 0.2)); color: var(--color-text-disabled); cursor: not-allowed; }
 
 /* Signup consent popup sheet (Figma node 135:40273, "popup sheet") */
 .signup-consent-dimmed { position: fixed; inset: 0; margin: auto; width: min(100%, var(--shell-width)); z-index: 20; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding: var(--space-24) 0; background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(2px); }

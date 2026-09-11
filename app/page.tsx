@@ -88,6 +88,16 @@ const marketingConsent = {
   detail: "이벤트, 혜택, 신규 기능 안내 등 광고성 정보를 이메일로 받을 수 있습니다. 동의하지 않아도 가입과 핵심 서비스 이용에는 제한이 없고, 언제든 철회할 수 있습니다.",
 };
 
+const MOCK_EMAIL_CODE = "123456";
+const EMAIL_CODE_SECONDS = 300;
+type EmailVerifyStatus = "idle" | "pending" | "verified";
+
+function formatCountdown(totalSeconds: number) {
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+}
+
 const preQuestionLabels: Record<PreQuestionKey, { label: string; placeholder: string }> = {
   likes: { label: "좋아하는 것", placeholder: "예: 산책, 아이스 아메리카노" },
   dislikes: { label: "싫어하는 것", placeholder: "예: 갑작스러운 일정 변경" },
@@ -103,6 +113,10 @@ export default function Home() {
   const [showPassword, setShowPassword] = useState(false);
   const [birthDigits, setBirthDigits] = useState("");
   const [showConsentSheet, setShowConsentSheet] = useState(false);
+  const [emailVerifyStatus, setEmailVerifyStatus] = useState<EmailVerifyStatus>("idle");
+  const [emailVerifyCode, setEmailVerifyCode] = useState("");
+  const [emailVerifyError, setEmailVerifyError] = useState(false);
+  const [emailVerifySeconds, setEmailVerifySeconds] = useState(EMAIL_CODE_SECONDS);
   const [me, setMe] = useState<MeData | null>(null);
   const [pending, setPending] = useState(false);
   const [authEmail, setAuthEmail] = useState("");
@@ -160,6 +174,41 @@ export default function Home() {
       .catch(() => undefined);
   }, [me]);
 
+  useEffect(() => {
+    if (emailVerifyStatus !== "pending") {
+      return;
+    }
+    const timer = setInterval(() => {
+      setEmailVerifySeconds((seconds) => (seconds > 0 ? seconds - 1 : 0));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [emailVerifyStatus]);
+
+  function requestEmailVerifyCode() {
+    if (!form.email) {
+      return;
+    }
+    setEmailVerifyStatus("pending");
+    setEmailVerifyError(false);
+    setEmailVerifyCode("");
+    setEmailVerifySeconds(EMAIL_CODE_SECONDS);
+    setToast(`개발 목업: 인증코드 ${MOCK_EMAIL_CODE} (실제 이메일 발송은 아직 연결되지 않았어요)`);
+  }
+
+  function handleEmailVerifyCodeChange(value: string) {
+    setEmailVerifyCode(value.replace(/\D/g, "").slice(0, 6));
+    setEmailVerifyError(false);
+  }
+
+  function submitEmailVerifyCode() {
+    if (emailVerifyCode === MOCK_EMAIL_CODE) {
+      setEmailVerifyStatus("verified");
+      setEmailVerifyError(false);
+    } else {
+      setEmailVerifyError(true);
+    }
+  }
+
   const showPreview = () => setToast("지금은 화면 프리뷰예요. 입력한 내용은 전송·저장되지 않아요.");
   function formatBirthDisplay(digits: string) {
     return [digits.slice(0, 4), digits.slice(4, 6), digits.slice(6, 8)].filter(Boolean).join(".");
@@ -188,7 +237,7 @@ export default function Home() {
     return age < 14;
   }, [form.birthDate]);
   const passwordsMatch = form.password.length > 0 && form.password === form.passwordConfirm;
-  const signupFieldsComplete = Boolean(form.name && form.birthDate && form.email && form.password && passwordsMatch) && !under14;
+  const signupFieldsComplete = Boolean(form.name && form.birthDate && form.email && form.password && passwordsMatch) && !under14 && emailVerifyStatus === "verified";
 
   async function requestJson<T>(path: string, body?: Record<string, unknown>, method: "POST" | "PATCH" = "POST"): Promise<T> {
     setPending(true);
@@ -365,14 +414,58 @@ export default function Home() {
                     <TextField label="생년월일" inputMode="numeric" maxLength={10} placeholder="yyyy.mm.dd" value={formatBirthDisplay(birthDigits)} onChange={(event) => handleBirthDateChange(event.target.value)} error={under14 ? "만 14세 미만은 가입할 수 없어요." : undefined} required />
                   </div>
                   <div className="login-field login-field--email">
-                    <div className="text-field flex flex-col gap-2">
+                    <div className="field-group flex flex-col gap-2">
                       <label htmlFor="signup-email" className="text-xs font-bold">이메일</label>
                       <div className="login-field--row">
-                        <input id="signup-email" type="email" placeholder="이메일을 입력해주세요" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} required />
-                        <button type="button" className="signup-verify-button text-label-kr" onClick={() => setToast("이메일 인증은 가입 완료 후 진행돼요.")}>이메일 인증</button>
+                        <div className={emailVerifyStatus === "idle" ? "field-box" : "field-box is-disabled"}>
+                          <input
+                            id="signup-email"
+                            className="field-box-input"
+                            type="email"
+                            placeholder="이메일을 입력해주세요"
+                            value={form.email}
+                            readOnly={emailVerifyStatus !== "idle"}
+                            onChange={(event) => setForm({ ...form, email: event.target.value })}
+                            required
+                          />
+                          {emailVerifyStatus === "verified" && <Icon name="check" width={16} height={16} className="signup-consent-check signup-consent-check--on" />}
+                        </div>
+                        <button type="button" className="signup-verify-button text-label-kr" disabled={!form.email} onClick={requestEmailVerifyCode}>
+                          {emailVerifyStatus === "idle" ? "이메일 인증" : "재전송하기"}
+                        </button>
                       </div>
                     </div>
                   </div>
+                  {emailVerifyStatus !== "idle" && (
+                    <div className="login-field">
+                      <div className="field-group flex flex-col gap-2">
+                        <label htmlFor="signup-email-code" className="text-xs font-bold">인증번호</label>
+                        <div className="login-field--row">
+                          <div className="field-box">
+                            <input
+                              id="signup-email-code"
+                              className="field-box-input"
+                              inputMode="numeric"
+                              placeholder="인증번호를 입력해주세요"
+                              value={emailVerifyCode}
+                              readOnly={emailVerifyStatus === "verified"}
+                              onChange={(event) => handleEmailVerifyCodeChange(event.target.value)}
+                            />
+                            {emailVerifyStatus === "verified" ? (
+                              <Icon name="check" width={16} height={16} className="signup-consent-check signup-consent-check--on" />
+                            ) : (
+                              <span className="field-box-suffix">{formatCountdown(emailVerifySeconds)}</span>
+                            )}
+                          </div>
+                          <button type="button" className="signup-verify-button text-label-kr" disabled={emailVerifyStatus === "verified"} onClick={submitEmailVerifyCode}>
+                            {emailVerifyStatus === "verified" ? "인증완료" : "인증하기"}
+                          </button>
+                        </div>
+                      </div>
+                      {emailVerifyError && <p className="signup-field-caption signup-field-caption--error text-caption-s">인증번호가 일치하지 않아요</p>}
+                      {emailVerifyStatus === "verified" && <p className="signup-field-caption signup-field-caption--success text-caption-s">인증이 완료됐어요!</p>}
+                    </div>
+                  )}
                   <div className="login-field login-field--password">
                     <TextField label="비밀번호" type={showPassword ? "text" : "password"} placeholder="비밀번호를 입력해주세요" value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} hint="8~16자, 숫자와 특수문자 포함" required />
                     <button type="button" className="signup-password-toggle" onClick={() => setShowPassword((value) => !value)} aria-label={showPassword ? "비밀번호 숨기기" : "비밀번호 보기"}>
@@ -380,7 +473,8 @@ export default function Home() {
                     </button>
                   </div>
                   <div className="login-field">
-                    <TextField label="비밀번호 확인" type="password" placeholder="비밀번호를 한번 더 입력해주세요" value={form.passwordConfirm} onChange={(event) => setForm({ ...form, passwordConfirm: event.target.value })} error={form.passwordConfirm && form.passwordConfirm !== form.password ? "비밀번호가 일치하지 않아요" : undefined} required />
+                    <TextField label="비밀번호 확인" type="password" placeholder="비밀번호를 한번 더 입력해주세요" value={form.passwordConfirm} onChange={(event) => setForm({ ...form, passwordConfirm: event.target.value })} required />
+                    {form.passwordConfirm && !passwordsMatch && <p className="signup-field-caption signup-field-caption--error text-caption-s">비밀번호가 일치하지 않아요</p>}
                   </div>
                 </div>
                 <div className="login-actions">
