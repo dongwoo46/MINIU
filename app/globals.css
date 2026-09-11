@@ -1,4 +1,4 @@
-﻿/* Provisional palette: replace here after Figma tokens/assets are confirmed. */
+﻿/* Color palette sourced from Figma "Color" variable collection (node 135:16092). */
 @import "tailwindcss";
 
 @theme {
@@ -18,18 +18,57 @@
 
 :root {
   color-scheme: light;
-  --bg-base: #faf8f2; --bg-sunken: #f0ece4; --surface: #fffefa;
-  --border: #d9d3ca; --text: #383435; --text-muted: #76706d; --text-inverse: #fffefa;
-  --primary: #f2b9bc; --primary-hover: #eaa4aa; --primary-active: #e2949c;
-  --accent: #dcd7f0; --heart: #ae4f63; --success: #497559;
-  --warning: #8b671d; --danger: #a73846; --info: #4c6489;
+  /* Figma "Color" variable collection (node 135:16092) — primitives, values as registered in Figma */
+  --color-common-0: #111111; --color-common-100: #ffffff;
+  --color-primary-blue: #7cb6f6; --color-secondary-blue: #e9f9ff; --color-accent-pink: #db2777;
+  --color-text-primary: #191f28; --color-text-secondary: #333d4b; --color-text-tertiary: #4e5968;
+  --color-text-quaternary: #6b7684; --color-text-quinary: #8b95a1; --color-text-disabled: #b0b8c1;
+  --color-border-primary: #2b1f28; --color-border-secondary: #d1d6db;
+  --color-border-tertiary: #e5e8eb; --color-border-quaternary: #f2f4f6;
+
+  /* Semantic aliases used across the app — mapped to the Figma primitives above.
+     No Figma variable exists for hover/active/success/warning/danger states; those were
+     removed rather than guessed (previously unused placeholders). */
+  --bg-base: var(--color-common-100); --bg-sunken: var(--color-border-quaternary); --surface: var(--color-common-100);
+  --border: var(--color-border-secondary); --text: var(--color-text-primary); --text-muted: var(--color-text-tertiary);
+  --text-inverse: var(--color-common-100);
+  --primary: var(--color-primary-blue); --accent: var(--color-secondary-blue); --heart: var(--color-accent-pink);
+  --info: var(--color-primary-blue);
   --font-ui: 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif;
   --font-body: 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif;
   --text-title: 26px; --text-heading: 17px; --text-body: 14px; --text-label: 12px; --text-caption: 11px;
-  --space-4: 4px; --space-8: 8px; --space-12: 12px; --space-16: 16px; --space-24: 24px; --space-32: 32px; --space-48: 48px;
-  --radius: 2px; --border-width: 1px; --shadow: 3px 3px 0 #d9d3ca; --shadow-pressed: 1px 1px 0 #d9d3ca;
+  --space-4: 4px; --space-6: 6px; --space-8: 8px; --space-12: 12px; --space-16: 16px; --space-24: 24px; --space-32: 32px; --space-48: 48px;
+  --radius: 0px; --border-width: 2px; --shadow: 3px 3px 0 #d9d3ca; --shadow-pressed: 1px 1px 0 #d9d3ca;
   --duration: 120ms; --easing: steps(2, end); --shell-width: 460px; --pixel-scale: 2px;
+
+  /* Figma 디자인 시스템 (node 97:11467, "🎨 Typography" · "🎨 Spacing") — 확정된 타입 스케일/스페이싱.
+     spacing/xs·md·lg·xl·xxl(4/8/16/24/32)는 기존 --space-*와 값이 이미 일치, sm(6)만 신규 추가.
+     border/radius 규칙: 두꺼운 2px 잉크 테두리 + 각진 모서리(radius 0)를 위 --border-width/--radius에 반영함. */
+  --font-pixel-kr: 'DungGeunMo', var(--font-ui); /* woff2 라이선스 확보 후 public/fonts/에 추가하고 @font-face 등록 전까지는 시스템 폰트로 폴백 */
+  --font-pixel-en: 'Silkscreen', var(--font-ui);
+  --text-display-l-size: 40px; --text-display-l-lh: 130%; --text-display-l-ls: -0.025em;
+  --text-display-m-size: 36px; --text-display-m-lh: 130%; --text-display-m-ls: -0.025em;
+  --text-title-l-size: 32px; --text-title-l-lh: 134%; --text-title-l-ls: -0.025em;
+  --text-title-m-size: 28px; --text-title-m-lh: 135%; --text-title-m-ls: -0.025em;
+  --text-heading-l-size: 22px; --text-heading-l-lh: 136%; --text-heading-l-ls: -0.025em;
+  --text-body-l-size: 16px; --text-body-l-lh: 150%; --text-body-l-ls: 0.01em;
+  --text-body-m-size: 14px; --text-body-m-lh: 150%; --text-body-m-ls: 0.014em;
+  --text-label-kr-size: 12px; --text-label-kr-lh: 130%; --text-label-kr-ls: 0.025em;
+  --text-label-en-size: 12px; --text-label-en-lh: 130%; --text-label-en-ls: 0.025em;
+  --text-caption-s-size: 10px; --text-caption-s-lh: 127%; --text-caption-s-ls: 0.03em;
 }
+
+/* Figma Typography 유틸리티 클래스 — 위 --text-*-size/-lh/-ls 토큰을 그대로 사용 */
+.text-display-l { font: normal 400 var(--text-display-l-size)/var(--text-display-l-lh) var(--font-pixel-kr); letter-spacing: var(--text-display-l-ls); }
+.text-display-m { font: normal 400 var(--text-display-m-size)/var(--text-display-m-lh) var(--font-pixel-kr); letter-spacing: var(--text-display-m-ls); }
+.text-title-l { font: normal 400 var(--text-title-l-size)/var(--text-title-l-lh) var(--font-pixel-kr); letter-spacing: var(--text-title-l-ls); }
+.text-title-m { font: normal 400 var(--text-title-m-size)/var(--text-title-m-lh) var(--font-pixel-kr); letter-spacing: var(--text-title-m-ls); }
+.text-heading-l { font: normal 400 var(--text-heading-l-size)/var(--text-heading-l-lh) var(--font-pixel-kr); letter-spacing: var(--text-heading-l-ls); }
+.text-body-l { font: normal 400 var(--text-body-l-size)/var(--text-body-l-lh) var(--font-pixel-kr); letter-spacing: var(--text-body-l-ls); }
+.text-body-m { font: normal 400 var(--text-body-m-size)/var(--text-body-m-lh) var(--font-pixel-kr); letter-spacing: var(--text-body-m-ls); }
+.text-label-kr { font: normal 400 var(--text-label-kr-size)/var(--text-label-kr-lh) var(--font-pixel-kr); letter-spacing: var(--text-label-kr-ls); }
+.text-label-en { font: bold 700 var(--text-label-en-size)/var(--text-label-en-lh) var(--font-pixel-en); letter-spacing: var(--text-label-en-ls); }
+.text-caption-s { font: normal 400 var(--text-caption-s-size)/var(--text-caption-s-lh) var(--font-pixel-kr); letter-spacing: var(--text-caption-s-ls); }
 * { box-sizing: border-box; }
 html, body { margin: 0; min-height: 100%; }
 body { background: var(--bg-sunken); color: var(--text); font-family: var(--font-body); font-size: var(--text-body); line-height: 1.6; }

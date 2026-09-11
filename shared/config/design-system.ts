@@ -1,10 +1,11 @@
-/** Preview registry. CSS is the source of truth for provisional visual tokens. */
+/** Preview registry. CSS is the source of truth for visual tokens. */
 export const designSystem = {
-  status: "provisional",
+  status: "confirmed",
   theme: "light",
   viewport: { min: 320, reference: 390, max: 460, referenceHeight: 844 },
-  spacing: [4, 8, 12, 16, 24, 32, 48],
-  colors: ["bg-base", "bg-sunken", "surface", "border", "text", "text-muted", "text-inverse", "primary", "primary-hover", "primary-active", "accent", "heart", "success", "warning", "danger", "info"],
+  spacing: [4, 6, 8, 12, 16, 24, 32, 48],
+  typography: ["display-l", "display-m", "title-l", "title-m", "heading-l", "body-l", "body-m", "label-kr", "label-en", "caption-s"],
+  colors: ["bg-base", "bg-sunken", "surface", "border", "text", "text-muted", "text-inverse", "primary", "accent", "heart", "info"],
   assets: { fonts: "/fonts/", icons: "/icons/", minimi: "/minimi/" },
   rules: { data: "mock-only", radius: "small", pixelScale: 2 },
 } as const;
