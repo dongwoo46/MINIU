@@ -13,6 +13,7 @@ const paths = {
   sparkle: "M12 2v5l5 5-5 5v5M2 12h5l5-5 5 5h5M7 12l5 5 5-5",
   eye: "M2 12l5-5h10l5 5-5 5H7zM11 11h2v2h-2z",
   "eye-off": "M2 12l5-5h10l5 5-5 5H7zM11 11h2v2h-2zM4 4l16 16",
+  refresh: "M4 12a8 8 0 0 1 14.5-4.5M20 12a8 8 0 0 1-14.5 4.5M18.5 3v4.5H14M5.5 21v-4.5H10",
 } as const;
 // Pixel-art glyphs exported from Figma (fill-based, unit-square strokes) — kept exact so they read as "pixel" icons, unlike the line-drawn set above.
 const pixelIcons = {

@@ -40,8 +40,36 @@ type MeData = {
 
 type ApiSuccess<T> = { ok: true; data: T };
 type ApiFailure = { ok: false; error: { code: string; message: string; details: Record<string, string> | null } };
-type AuthMode = "login" | "signup" | "verify" | "partnerInfo";
+type AuthMode = "login" | "signup" | "verify" | "partnerInfo" | "avatarStyle";
 type PartnerGender = "male" | "female";
+type AvatarTab = "hair" | "outfit";
+
+const hairColors = [
+  { id: "jetBlack", hex: "#201d1d" },
+  { id: "brown", hex: "#64422d" },
+  { id: "blue", hex: "#4a92ea" },
+  { id: "cream", hex: "#faffd8", outline: true },
+  { id: "pink", hex: "#f985ad" },
+  { id: "gray", hex: "#f1f1f5", outline: true },
+] as const;
+
+const hairStyles = [
+  { id: "bangTwin", label: "뱅 트윈번" },
+  { id: "bob", label: "단발 보브" },
+  { id: "ponytail", label: "포니테일" },
+  { id: "wave", label: "물결 롱펌" },
+] as const;
+
+const outfitStyles = [
+  { id: "outfit1", label: "의상1" },
+  { id: "outfit2", label: "의상2" },
+  { id: "outfit3", label: "의상3" },
+  { id: "outfit4", label: "의상4" },
+] as const;
+
+const AVATAR_DEFAULT_COLOR = hairColors[0].id;
+const AVATAR_DEFAULT_HAIR = hairStyles[0].id;
+const AVATAR_DEFAULT_OUTFIT = outfitStyles[0].id;
 type PreQuestionKey = "likes" | "dislikes" | "tendencies" | "habits" | "values";
 
 const requiredConsentItems = [
@@ -120,6 +148,10 @@ export default function Home() {
   const [partnerName, setPartnerName] = useState("");
   const [partnerGender, setPartnerGender] = useState<PartnerGender | null>(null);
   const [partnerBirthDigits, setPartnerBirthDigits] = useState("");
+  const [avatarTab, setAvatarTab] = useState<AvatarTab>("hair");
+  const [avatarColor, setAvatarColor] = useState<string>(AVATAR_DEFAULT_COLOR);
+  const [avatarHair, setAvatarHair] = useState<string>(AVATAR_DEFAULT_HAIR);
+  const [avatarOutfit, setAvatarOutfit] = useState<string>(AVATAR_DEFAULT_OUTFIT);
   const [showConsentSheet, setShowConsentSheet] = useState(false);
   const [emailVerifyStatus, setEmailVerifyStatus] = useState<EmailVerifyStatus>("idle");
   const [emailVerifyCode, setEmailVerifyCode] = useState("");
@@ -403,7 +435,7 @@ export default function Home() {
 
   if (!me) {
     return (
-      <AuthShell hideTopBar={mode === "login" || mode === "signup" || mode === "partnerInfo"} mainClassName={mode === "login" || mode === "signup" || mode === "partnerInfo" ? "login-main" : undefined}>
+      <AuthShell hideTopBar={mode === "login" || mode === "signup" || mode === "partnerInfo" || mode === "avatarStyle"} mainClassName={mode === "login" || mode === "signup" || mode === "partnerInfo" || mode === "avatarStyle" ? "login-main" : undefined}>
         {mode === "signup" && (
           <div className="login-screen signup-screen">
             <Image src="/login/bg-decor.png" alt="" width={404} height={404} className="login-bg-decor" priority aria-hidden />
@@ -600,10 +632,98 @@ export default function Home() {
               </div>
             </div>
             <div className="login-actions">
-              <Button type="button" fullWidth className="login-submit" onClick={showPreview}>
+              <Button type="button" fullWidth className="login-submit" onClick={() => setMode("avatarStyle")}>
                 <span className="text-label-en">NEXT ▶</span>
               </Button>
               <button className="login-signup-link text-label-kr" type="button" onClick={() => setMode("login")}>로그인으로 돌아가기</button>
+            </div>
+          </div>
+        )}
+        {mode === "avatarStyle" && (
+          <div className="login-screen avatar-style-screen">
+            <Image src="/login/bg-decor.png" alt="" width={404} height={404} className="login-bg-decor" priority aria-hidden />
+            <span className="login-logo text-display-m">MINIU</span>
+            <div className="avatar-style-heading">
+              <h1>연인 미니미를 꾸며주세요</h1>
+              <p>내 연인을 닮은 모습으로 만들어보세요!</p>
+            </div>
+            <div className="avatar-style-stage">
+              <span className="avatar-style-sparkle avatar-style-sparkle--star" aria-hidden>✦</span>
+              <Image src="/setup/star.svg" alt="" width={16} height={15} className="avatar-style-sparkle avatar-style-sparkle--svg" aria-hidden />
+              <div className="avatar-style-character-crop">
+                {/* eslint-disable-next-line @next/next/no-img-element -- percentage crop/zoom needs a plain img, next/image requires fixed intrinsic sizing */}
+                <img src="/minimi/partner-preview.png" alt="연인 미니미 미리보기" className="avatar-style-character" />
+              </div>
+              <Image src="/setup/shadow.svg" alt="" width={104} height={15} className="avatar-style-shadow" aria-hidden />
+            </div>
+            <div className="avatar-style-panel">
+              <div className="avatar-style-tabs-row">
+                <div className="avatar-style-tabs">
+                  <button type="button" className={avatarTab === "hair" ? "avatar-style-tab is-selected" : "avatar-style-tab"} onClick={() => setAvatarTab("hair")}>헤어</button>
+                  <button type="button" className={avatarTab === "outfit" ? "avatar-style-tab is-selected" : "avatar-style-tab"} onClick={() => setAvatarTab("outfit")}>의상</button>
+                </div>
+                <button type="button" className="avatar-style-reset" onClick={() => { setAvatarColor(AVATAR_DEFAULT_COLOR); setAvatarHair(AVATAR_DEFAULT_HAIR); setAvatarOutfit(AVATAR_DEFAULT_OUTFIT); }}>
+                  초기화 <Icon name="refresh" width={14} height={14} />
+                </button>
+              </div>
+              {avatarTab === "hair" && (
+                <div className="avatar-style-colors">
+                  <span className="avatar-style-colors-label">컬러</span>
+                  <div className="avatar-style-colors-list">
+                    {hairColors.map((color) => {
+                      const isSelected = avatarColor === color.id;
+                      const shadows: string[] = [];
+                      if ("outline" in color) shadows.push("inset 0 0 0 1px var(--color-border-secondary)");
+                      if (isSelected) shadows.push("0 0 0 2px var(--color-common-100)", "0 0 0 4px #22d3ee");
+                      return (
+                        <button
+                          key={color.id}
+                          type="button"
+                          aria-label={color.id}
+                          className={isSelected ? "avatar-style-color is-selected" : "avatar-style-color"}
+                          style={{ background: color.hex, boxShadow: shadows.length ? shadows.join(", ") : undefined }}
+                          onClick={() => setAvatarColor(color.id)}
+                        />
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+              {avatarTab === "hair" ? (
+                <div className="avatar-style-grid">
+                  {hairStyles.map((style) => (
+                    <button
+                      key={style.id}
+                      type="button"
+                      className={avatarHair === style.id ? "avatar-style-card is-selected" : "avatar-style-card"}
+                      onClick={() => setAvatarHair(style.id)}
+                    >
+                      <span className="avatar-style-card-thumb" aria-hidden />
+                      <span className="avatar-style-card-label">{style.label}</span>
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <div className="avatar-style-grid">
+                  {outfitStyles.map((style) => (
+                    <button
+                      key={style.id}
+                      type="button"
+                      className={avatarOutfit === style.id ? "avatar-style-card is-selected" : "avatar-style-card"}
+                      onClick={() => setAvatarOutfit(style.id)}
+                    >
+                      <span className="avatar-style-card-thumb" aria-hidden />
+                      <span className="avatar-style-card-label">{style.label}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div className="login-actions">
+              <Button type="button" fullWidth className="login-submit" onClick={showPreview}>
+                <span className="text-label-en">NEXT ▶</span>
+              </Button>
+              <button className="login-signup-link text-label-kr" type="button" onClick={() => setMode("partnerInfo")}>이전으로 돌아가기</button>
             </div>
           </div>
         )}
