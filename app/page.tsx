@@ -1028,8 +1028,8 @@ export default function Home() {
                 <span className="step-option-text">
                   <span className="step-option-title">내 초대 코드</span>
                   <span className="step-invite-code-row">
-                    <span className="step-invite-code">K7M2QP9A</span>
-                    <button type="button" className="step-invite-chip" onClick={() => copyInviteCode("K7M2QP9A")}>
+                    <span className="step-invite-code">K7M2QP9A4B</span>
+                    <button type="button" className="step-invite-chip" onClick={() => copyInviteCode("K7M2QP9A4B")}>
                       코드복사 <Icon name="copy" width={14} height={14} />
                     </button>
                   </span>
@@ -1040,7 +1040,7 @@ export default function Home() {
                 <span className="step-option-text step-option-text--gap-sm">
                   <span className="step-option-title">받은 코드로 입력</span>
                   <span className="step-invite-input-row">
-                    <input className="step-invite-input" placeholder="예 : K7M2QP9A" maxLength={8} value={previewInviteCode} onChange={(event) => setPreviewInviteCode(event.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 8))} />
+                    <input className="step-invite-input" placeholder="예 : K7M2QP9A4B" maxLength={10} value={previewInviteCode} onChange={(event) => setPreviewInviteCode(event.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 10))} />
                   </span>
                 </span>
               </div>
@@ -1130,7 +1130,7 @@ export default function Home() {
               <span className="step-option-text step-option-text--gap-sm">
                 <span className="step-option-title">받은 코드로 입력</span>
                 <span className="step-invite-input-row">
-                  <input className="step-invite-input" placeholder="예 : K7M2QP9A" maxLength={8} value={inviteCodeInput} onChange={(event) => { setInviteCodeInput(event.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 8)); setAcceptInviteError(""); }} />
+                  <input className="step-invite-input" placeholder="예 : K7M2QP9A4B" maxLength={10} value={inviteCodeInput} onChange={(event) => { setInviteCodeInput(event.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 10)); setAcceptInviteError(""); }} />
                 </span>
                 {acceptInviteError && <p className="signup-field-caption signup-field-caption--error text-caption-s">{acceptInviteError}</p>}
               </span>
