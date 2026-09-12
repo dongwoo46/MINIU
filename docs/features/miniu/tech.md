@@ -12,7 +12,7 @@ updated: 2026-09-11
 ## 1. 타당성과 범위
 
 - 판정: 조건부
-- 근거: Next.js App Router 기반 API와 모바일 프리뷰 UI가 있고, Supabase 마이그레이션에 MVP 도메인 테이블·RLS·초대 RPC가 준비되어 있다. 다만 현재 구현은 인증 일부만 Supabase를 쓰고, 초대·커플·사전 질문·미니유·기록·카드·채팅은 `.data/miniu-db.json` 로컬 저장소를 쓰므로 배포 가능한 MVP가 되려면 저장소를 Supabase로 통일해야 한다.
+- 근거: Next.js App Router 기반 API와 모바일 프리뷰 UI가 있고, Supabase 마이그레이션에 MVP 도메인 테이블·RLS가 준비되어 있다. 현재 인증, 현재 사용자 조회, 초대·커플 연결, 사전 질문, 미니유, 기록, 프로필 카드, 채팅 quota·로그는 Supabase 기준으로 동작한다. 남은 큰 범위는 프론트 실제 API 연결, 채팅 에이전트 고도화, 서브 기능 확장이다.
 - 포함: R-1~R-27의 필수·메인 기능을 우선 설계한다. 인증, 세션, 온보딩, 커플 연결, 사전 질문, 미니유 생성, 기록, 프로필 카드, AI 채팅, 공통 에러·로깅을 다룬다.
 - 제외: 문자, 집 방문, 애정표현, 아이템, 공유 이미지, 알림의 상세 구현은 서브 기능 착수 시 별도 설계로 확장한다. 현재 문서에서는 스키마와 API 경계만 유지한다.
 
@@ -24,7 +24,7 @@ updated: 2026-09-11
 | API 응답 래퍼 | `app/lib/miniu/http.ts` | 모든 라우트가 `{ ok, data/error }` 형태로 응답한다 |
 | 인증·세션 helper | `app/lib/miniu/auth.ts` | `miniu_session` httpOnly 쿠키와 `app_sessions` 조회를 인증 단일 경로로 쓴다 |
 | Supabase REST helper | `app/lib/miniu/supabase.ts` | service role 기반 서버 전용 DB 접근과 Supabase Auth REST 호출에 사용한다 |
-| Supabase Auth helper | `app/lib/miniu/supabase-auth.ts` | 가입, 비밀번호 로그인, 인증코드 생성·소비를 담당한다 |
+| Supabase Auth helper | `app/lib/miniu/supabase-auth.ts` | 가입, 비밀번호 로그인, 이메일 인증 토큰 검증을 담당한다 |
 | 입력 검증 | `app/lib/miniu/validation.ts` | 이메일·비밀번호·날짜·본문 검증과 표준 `ApiError`를 재사용한다 |
 | 사실 분리·분류 프로토타입 | `app/lib/miniu/facts.ts` | 초기 MVP에서는 규칙 기반 카드 생성으로 쓰고, Gemini 분류기로 교체 가능한 경계로 둔다 |
 | AI 호출 | `app/lib/miniu/gemini.ts` | 채팅 응답과 이후 분류·병합·대표 문구 생성에서 서버 전용 호출로 사용한다 |
@@ -38,12 +38,12 @@ updated: 2026-09-11
 |---|---|---|---|
 | 인증 API | 회원가입, 이메일 인증, 재발송, 로그인, 로그아웃 | 기존 수정 | `app/api/miniu/auth/*/route.ts` |
 | 사용자 API | 현재 사용자·온보딩·커플·미니유 요약 조회 | 기존 수정 필요 | `app/api/miniu/me/route.ts` |
-| 초대 API | 초대 발급·조회, 코드 수락 | 기존 Supabase 전환 필요 | `app/api/miniu/invitations/**/route.ts` |
-| 온보딩 API | 사전 질문 저장·조회, 초기 카드 생성, 온보딩 단계 갱신 | 기존 Supabase 전환 필요 | `app/api/miniu/onboarding/pre-questions/route.ts` |
-| 미니유 API | 미니유 생성·조회·수정 | 기존 Supabase 전환 필요 | `app/api/miniu/miniu/route.ts` |
-| 기록 API | 기록 CRUD, 분석 상태, 카드 생성 트리거 | 기존 Supabase 전환 필요 | `app/api/miniu/records/**/route.ts` |
-| 프로필 카드 API | 카드 조회·수정·삭제·병합 | 기존 Supabase 전환 필요 | `app/api/miniu/profile-cards/**/route.ts` |
-| 채팅 API | 일일 quota, 프롬프트 구성, Gemini 응답, 사용량 차감 | 기존 Supabase 전환 필요 | `app/api/miniu/chat/**/route.ts` |
+| 초대 API | 초대 발급·조회, 코드 수락 | 기존 Supabase 전환 완료 | `app/api/miniu/invitations/**/route.ts` |
+| 온보딩 API | 사전 질문 저장·조회, 초기 카드 생성, 온보딩 단계 갱신 | 기존 Supabase 전환 완료 | `app/api/miniu/onboarding/pre-questions/route.ts` |
+| 미니유 API | 미니유 생성·조회·수정 | 기존 Supabase 전환 완료 | `app/api/miniu/miniu/route.ts` |
+| 기록 API | 기록 CRUD, 분석 상태, 카드 생성 트리거 | 기존 Supabase 전환 완료 | `app/api/miniu/records/**/route.ts` |
+| 프로필 카드 API | 카드 조회·수정·삭제·병합 | 기존 Supabase 전환 완료 | `app/api/miniu/profile-cards/**/route.ts` |
+| 채팅 API | 일일 quota, 프롬프트 구성, Gemini 응답, 사용량 차감 | 기존 Supabase 전환 완료 | `app/api/miniu/chat/**/route.ts` |
 | AI 채팅 에이전트 | 사용자 질문 의도 파악, 근거 검색, 충돌·불확실성 판단, 최종 응답 생성 | 신규 필요 | `app/lib/miniu/chat-agent.ts`, `app/lib/miniu/ai-context.ts` |
 | 데이터 접근 계층 | Supabase REST/RPC 호출, 응답 매핑 | 신규 필요 | `app/lib/miniu/*.ts` |
 | 도메인 매퍼 | DB snake_case와 앱 camelCase 타입 변환 | 신규 필요 | `app/lib/miniu/mappers.ts` 또는 기능별 helper |
@@ -57,7 +57,7 @@ updated: 2026-09-11
 |---|---|---|---|---|
 | 계정 인증 | Supabase Auth email/password | `auth.users` | Supabase Auth, 인증 API | R-1, R-2 |
 | 프로필 | `id`, `email`, `name`, `birth_date`, `email_verified_at`, `onboarding_step`, `deleted_at` | `profiles` | 인증·온보딩 API | R-1~R-3 |
-| 인증코드 | 6자리 코드의 SHA-256 hash, 30분 TTL, `consumed_at` | `email_verification_codes` | 인증 API | R-1 |
+| 이메일 인증 | Supabase Auth 이메일 링크·토큰 | `auth.users` | Supabase Auth, 인증 API | R-1 |
 | 앱 세션 | random token hash, 30일 TTL, `revoked_at` | `app_sessions`, `miniu_session` 쿠키 | 로그인·인증·로그아웃 API | R-2 |
 | 약관 동의 | 동의 타입, 문서 버전, 동의 시각 | `user_consents` | 회원가입 API | R-1, R-14 |
 | 초대 | 코드, 상태, 생성자, 수락자, 만료 시각 | `invitations` | 초대 API | R-5, R-9 |
@@ -96,8 +96,8 @@ updated: 2026-09-11
 ## 6. 처리와 복구
 
 - 정상 흐름:
-  1. 회원가입 API가 Supabase Auth 유저와 `profiles` row를 만들고 인증코드를 `email_verification_codes`에 저장한다.
-  2. 인증 API가 최신 미소비 코드를 확인해 소비 처리하고 `profiles.email_verified_at`, `onboarding_step`을 갱신한 뒤 `app_sessions` 토큰을 발급한다.
+  1. 회원가입 API가 Supabase Auth 유저와 `profiles` row, 동의 이력을 만들고 Supabase Auth 인증 메일을 발송한다.
+  2. 인증 콜백/API가 Supabase Auth 토큰을 확인하고 `profiles.email_verified_at`, `onboarding_step`을 갱신한 뒤 `app_sessions` 토큰을 발급한다.
   3. 모든 보호 API는 `requireUser()`로 `miniu_session` 쿠키를 읽고 `app_sessions`의 hash, 만료, revoke 상태를 검증한다.
   4. 온보딩은 초대 발급·수락, 사전 질문 저장, 홈 진입 상태를 `profiles.onboarding_step`으로 전이한다.
   5. 커플 연결 이후 미니유, 기록, 카드, 채팅 API가 열린다.
@@ -109,8 +109,8 @@ updated: 2026-09-11
   - 커플 미연결에서 잠긴 기능을 호출하면 `403 FORBIDDEN`으로 응답한다.
   - AI 분류·채팅 실패는 원본 저장을 되돌리지 않고 분석 상태 또는 응답 오류만 기록한다.
 - 재시도·중복 방지:
-  - 회원가입 전 `profiles.email` 중복을 확인한다. Auth 유저 생성 후 프로필 생성 실패 시 운영용 보정 작업이 필요하므로 로그를 남긴다.
-  - 인증코드는 `consumed_at is null`, `expires_at > now()` 조건으로만 수락한다.
+  - 회원가입 전 `profiles.email` 중복을 확인한다. Auth 유저 생성 후 프로필·동의 저장 실패 시 Auth 유저를 롤백하고 로그를 남긴다.
+  - 이메일 인증은 Supabase Auth 토큰 검증 결과만 수락한다.
   - 새 초대 발급 전 같은 사용자의 pending 초대를 만료한다.
   - 채팅 사용량은 응답 생성 성공 후에만 증가한다.
 - 되돌리기:
@@ -149,8 +149,6 @@ updated: 2026-09-11
 | 질문 | 결정이 필요한 이유 | 막히는 작업 |
 |---|---|---|
 | 실제 이메일 발송은 Supabase 메일을 쓸지, 현재 개발용 코드 응답을 유지할지 | 현재 API는 `devVerificationCode`를 반환한다. 배포 전 사용자 이메일 인증 UX와 발송 주체를 정해야 한다 | R-1, R-5 |
-| Supabase Auth 유저 생성 후 `profiles` 생성이 실패했을 때 자동 보정할지 수동 운영으로 처리할지 | Auth와 서비스 프로필이 분리되어 원자적 트랜잭션이 아니다 | R-1 운영 안정성 |
-| 이벤트 로그를 로컬 `.data`에서 Supabase `event_logs`로 언제 전환할지 | 현재 인증 이벤트도 로컬 store에 남는다. 지표 산출은 Supabase 기준으로 통일해야 한다 | R-13 |
 | AI 분류·병합을 Gemini로 즉시 전환할지 규칙 기반 MVP 후 교체할지 | 현재 `facts.ts`는 규칙 기반이며 R-17/R-18의 AI 판정과 차이가 있다 | R-17, R-18 |
 | AI 채팅 에이전트를 LangGraph/LangChain으로 어느 깊이까지 구현할지 | 사용자가 질문하면 DB·문자·채팅 기록을 찾아 가장 근거 있는 답을 내야 하므로 단순 프롬프트보다 깊은 설계가 필요하다 | R-24, R-25 |
 | 커플 연결 해제 30일 유예 중 재연결로 삭제 취소를 허용할지 | 삭제·복구 UX와 배치 정책이 달라진다 | R-11 |

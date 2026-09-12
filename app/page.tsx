@@ -149,10 +149,12 @@ export default function Home() {
     const authMessage = params.get("authMessage");
     const authState = params.get("auth");
     if (authMessage) {
-      setToast(authMessage);
-      if (authState === "verified" || authState === "verify_error") {
-        setMode("login");
-      }
+      queueMicrotask(() => {
+        setToast(authMessage);
+        if (authState === "verified" || authState === "verify_error") {
+          setMode("login");
+        }
+      });
       params.delete("auth");
       params.delete("authMessage");
       const next = `${window.location.pathname}${params.toString() ? `?${params}` : ""}`;

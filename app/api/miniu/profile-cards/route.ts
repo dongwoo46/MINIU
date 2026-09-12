@@ -9,7 +9,7 @@ export async function GET() {
   try {
     const user = await requireUser();
     if (!(await getSupabaseConnectedCouple(user.id))) {
-      throw new ApiError(403, "FORBIDDEN", "Couple connection is required.");
+      throw new ApiError(403, "FORBIDDEN", "연인과 연결해 주세요.");
     }
     const cards = await selectRows<ProfileCardRow>("profile_cards", `user_id=eq.${user.id}&deleted_at=is.null&order=updated_at.desc&select=*`);
     const sources = await getProfileCardSources(user.id, cards.map((card) => card.id));

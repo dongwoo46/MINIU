@@ -4,7 +4,7 @@ import { logEvent } from "@/app/lib/miniu/facts";
 import { fail, ok } from "@/app/lib/miniu/http";
 import { updateDb } from "@/app/lib/miniu/store";
 import { insertRows } from "@/app/lib/miniu/supabase";
-import { createSupabaseAuthUser } from "@/app/lib/miniu/supabase-auth";
+import { createSupabaseAuthUser, deleteSupabaseAuthUser } from "@/app/lib/miniu/supabase-auth";
 import {
   ApiError,
   assertObject,
@@ -32,11 +32,11 @@ export async function POST(request: Request) {
     validatePassword(password);
     const missingConsent = requiredSignupConsentFields.find((field) => !consents[field]);
     if (missingConsent) {
-      throw new ApiError(400, "VALIDATION_ERROR", "Required signup consent is missing.", { [missingConsent]: "required" });
+      throw new ApiError(400, "VALIDATION_ERROR", "필수 동의를 모두 체크해 주세요.", { [missingConsent]: "required" });
     }
 
     if (await getProfileByEmail(email)) {
-      return Response.json({ ok: false, error: { code: "CONFLICT", message: "Email is already registered.", details: null } }, { status: 409 });
+      return Response.json({ ok: false, error: { code: "CONFLICT", message: "이미 가입된 이메일이에요.", details: null } }, { status: 409 });
     }
 
     const now = new Date().toISOString();
@@ -44,43 +44,67 @@ export async function POST(request: Request) {
     try {
       userId = await createSupabaseAuthUser({ email, password, name, birthDate });
     } catch (error) {
-      if (error instanceof ApiError && error.status === 400 && error.message.toLowerCase().includes("already registered")) {
-        return Response.json({ ok: false, error: { code: "CONFLICT", message: "Email is already registered.", details: null } }, { status: 409 });
+      if (isAlreadyRegisteredError(error)) {
+        return Response.json({ ok: false, error: { code: "CONFLICT", message: "이미 가입된 이메일이에요.", details: null } }, { status: 409 });
+      }
+      if (error instanceof ApiError) {
+        throw new ApiError(400, "BAD_REQUEST", "가입을 완료하지 못했어요.");
       }
       throw error;
     }
-    await insertRows("profiles", {
-      id: userId,
-      email,
-      name,
-      birth_date: birthDate,
-      terms_agreed_at: now,
-      required_consents_agreed_at: now,
-      marketing_agreed_at: consents.marketing ? now : null,
-      onboarding_step: "email_verification",
-    });
-    await insertSignupConsents({
-      userId,
-      consents,
-      agreedAt: now,
-      ip: request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? request.headers.get("x-real-ip"),
-      userAgent: request.headers.get("user-agent"),
-    });
+    try {
+      await insertRows("profiles", {
+        id: userId,
+        email,
+        name,
+        birth_date: birthDate,
+        terms_agreed_at: now,
+        required_consents_agreed_at: now,
+        marketing_agreed_at: consents.marketing ? now : null,
+        onboarding_step: "email_verification",
+      });
+      await insertSignupConsents({
+        userId,
+        consents,
+        agreedAt: now,
+        ip: request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? request.headers.get("x-real-ip"),
+        userAgent: request.headers.get("user-agent"),
+      });
 
-    await updateDb((db) => {
-      logEvent(db, { userId, name: "signup_completed" });
-    });
+      await updateDb((db) => {
+        logEvent(db, { userId, name: "signup_completed" });
+      });
 
-    const user = await getProfileById(userId);
-    if (!user) {
-      throw new ApiError(500, "INTERNAL_ERROR", "Created user profile was not found.");
+      const user = await getProfileById(userId);
+      if (!user) {
+        throw new ApiError(500, "INTERNAL_ERROR", "가입 정보를 확인하지 못했어요.");
+      }
+
+      return ok({
+        user: publicUser(user),
+      });
+    } catch (error) {
+      await rollbackAuthUser(userId);
+      throw error;
     }
-
-    return ok({
-      user: publicUser(user),
-    });
   } catch (error) {
     return fail(error);
+  }
+}
+
+function isAlreadyRegisteredError(error: unknown): boolean {
+  if (!(error instanceof ApiError)) {
+    return false;
+  }
+  const message = error.message.toLowerCase();
+  return (error.status === 400 || error.status === 422) && (message.includes("already registered") || message.includes("already exists"));
+}
+
+async function rollbackAuthUser(userId: string): Promise<void> {
+  try {
+    await deleteSupabaseAuthUser(userId);
+  } catch (error) {
+    console.error("Failed to rollback Supabase Auth user after signup failure.", error);
   }
 }
 

@@ -60,7 +60,7 @@ export async function POST() {
   try {
     const user = await requireUser();
     if (await getSupabaseConnectedCouple(user.id)) {
-      return Response.json({ ok: false, error: { code: "CONFLICT", message: "User already has a couple connection.", details: null } }, { status: 409 });
+      return Response.json({ ok: false, error: { code: "CONFLICT", message: "이미 연인과 연결되어 있어요.", details: null } }, { status: 409 });
     }
 
     await patchRows("invitations", `created_by=eq.${user.id}&status=eq.pending`, {

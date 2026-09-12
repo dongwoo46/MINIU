@@ -31,6 +31,7 @@ Codex와 Claude는 MINIU 프론트엔드 화면, 컴포넌트, 스타일을 만�
 - FSD 구조를 유지한다. 공통 UI는 `shared/ui`, 제품 설정은 `shared/config`, 도메인 표현은 `entities`, 화면 조합은 `widgets`, 진입점은 `app`에 둔다.
 - 색상, 간격, radius, shadow, 폰트, 모바일 shell 폭은 기존 토큰을 우선 사용한다. 새 값이 필요하면 `app/globals.css` 또는 `shared/config/design-system.ts`에 의도를 드러내고 등록한 뒤 사용한다.
 - 기능 API 연결 전까지 프론트 프리뷰는 mock 데이터만 사용한다. 임시 화면에서 `fetch`, Supabase, localStorage, sessionStorage를 새로 연결하지 않는다.
+- 사용자에게 보이는 에러 메시지는 간단한 한글 문장으로 적는다.
 - Figma 에셋이 확정되기 전에는 `public/fonts`, `public/icons`, `public/minimi`의 README 규칙을 따르고, 코드-native placeholder는 교체 가능한 형태로 둔다.
 - 기존 `app/page.tsx`, `app/layout.tsx`, `app/globals.css`의 MINIU 문구와 디자인 시스템 구조를 이전 컨셉으로 되돌리지 않는다.
 

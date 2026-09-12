@@ -33,10 +33,10 @@ export async function POST(request: Request) {
     const user = await requireUser();
     const couple = await getSupabaseConnectedCouple(user.id);
     if (!couple) {
-      throw new ApiError(403, "FORBIDDEN", "Couple connection is required.");
+      throw new ApiError(403, "FORBIDDEN", "연인과 연결해 주세요.");
     }
     if (await selectOne<MiniuRow>("minius", `user_id=eq.${user.id}&deleted_at=is.null&limit=1&select=id`)) {
-      return Response.json({ ok: false, error: { code: "CONFLICT", message: "Miniu already exists.", details: null } }, { status: 409 });
+      return Response.json({ ok: false, error: { code: "CONFLICT", message: "이미 미니유가 있어요.", details: null } }, { status: 409 });
     }
 
     const [miniu] = await insertRows<MiniuRow>("minius", {
@@ -61,12 +61,12 @@ export async function PATCH(request: Request) {
     const body = assertObject(await request.json());
     const user = await requireUser();
     if (!(await getSupabaseConnectedCouple(user.id))) {
-      throw new ApiError(403, "FORBIDDEN", "Couple connection is required.");
+      throw new ApiError(403, "FORBIDDEN", "연인과 연결해 주세요.");
     }
 
     const existing = await selectOne<MiniuRow>("minius", `user_id=eq.${user.id}&deleted_at=is.null&limit=1&select=*`);
     if (!existing) {
-      return Response.json({ ok: false, error: { code: "NOT_FOUND", message: "Miniu was not found.", details: null } }, { status: 404 });
+      return Response.json({ ok: false, error: { code: "NOT_FOUND", message: "미니유를 찾을 수 없어요.", details: null } }, { status: 404 });
     }
 
     const values: Record<string, string> = {};
