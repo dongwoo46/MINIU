@@ -4,6 +4,17 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { ButtonPrimary } from "../components/Buttons";
 import { Window01 } from "../components/DialogWindows";
+import {
+  ApiRequestError,
+  type ApiMergeCandidate,
+  type ApiRecord,
+  createRecord,
+  deleteRecord,
+  listMergeCandidates,
+  listRecords,
+  mergeProfileCard,
+  rejectMergeCandidate,
+} from "../lib/api";
 
 const MAX_NOTE_LENGTH = 150;
 
@@ -25,91 +36,53 @@ const FOOTER_BLUR_LAYERS = [
   { blur: 30, maskFrom: 60, maskTo: 85 },
 ];
 
-type Note = {
-  id: number;
-  badge: string;
-  date: string;
-  body: string;
-};
-
-const INITIAL_NOTES: Note[] = [
-  {
-    id: 16,
-    badge: "file 16",
-    date: "2026.09.20 14:20",
-    body: "오늘 같이 걷다가 알았는데 지수는 민트초코를 극도로 싫어하고 치즈케이크를 제일 좋아함.",
-  },
-  {
-    id: 15,
-    badge: "file 15",
-    date: "2026.09.19 09:30",
-    body: "어제는 비 오는 날이라서 카페에서 오랜만에 만났는데, 수지는 여전히 커피보다 차를 더 좋아함.",
-  },
-  {
-    id: 14,
-    badge: "file 14",
-    date: "2026.09.18 11:45",
-    body: "지난 주말에는 친구들과 바베큐를 했는데, 동수는 고기를 좋아하지만 야채는 싫어함.",
-  },
-  {
-    id: 13,
-    badge: "file 13",
-    date: "2026.09.17 16:00",
-    body: "최근에 본 영화에 대해 이야기했는데, 지영은 액션 영화보다 드라마를 선호함.",
-  },
-  {
-    id: 12,
-    badge: "file 12",
-    date: "2026.09.15 18:15",
-    body: "이번 여름 여행에서 만난 친구가 일본 음식을 정말 좋아했는데, 초밥은 별로였음.",
-  },
-];
-
-// AI 유사 기록 판별은 아직 붙지 않아서, 단어 겹침 비율로 유사도를 어림하는
-// 임시 휴리스틱을 대신 쓴다(2인 사이드프로젝트 규모의 목업).
-function textSimilarity(a: string, b: string): number {
-  const tokenize = (text: string) =>
-    new Set(
-      text
-        .replace(/[.,!?~]/g, "")
-        .split(/\s+/)
-        .filter(Boolean)
-    );
-  const setA = tokenize(a);
-  const setB = tokenize(b);
-  if (setA.size === 0 || setB.size === 0) return 0;
-  let intersection = 0;
-  for (const token of setA) {
-    if (setB.has(token)) intersection++;
-  }
-  const union = setA.size + setB.size - intersection;
-  return union === 0 ? 0 : intersection / union;
+// 서버 기록에는 "file 16" 같은 배지 개념이 없어서, created_at 오름차순
+// 기준으로 화면에서 번호를 매겨 보여준다(정렬 순서와 무관하게 고정).
+function buildBadgeMap(records: ApiRecord[]): Map<string, string> {
+  const byCreatedAsc = [...records].sort((a, b) =>
+    a.createdAt.localeCompare(b.createdAt)
+  );
+  const map = new Map<string, string>();
+  byCreatedAsc.forEach((record, index) => {
+    map.set(record.id, `file ${String(index + 1).padStart(2, "0")}`);
+  });
+  return map;
 }
 
-const SIMILARITY_THRESHOLD = 0.5;
+function formatDisplayDate(iso: string): string {
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}.${pad(d.getMonth() + 1)}.${pad(d.getDate())} ${pad(
+    d.getHours()
+  )}:${pad(d.getMinutes())}`;
+}
 
-// TODO: 병합 팝업 확인용 임시 스위치. 확인 끝나면 false로 되돌릴 것.
-const ALWAYS_SHOW_MERGE_FOR_TESTING = true;
+function toDateInputValue(date: Date): string {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
 
-function findSimilarNote(body: string, notes: Note[]): Note | undefined {
-  let best: Note | undefined;
-  let bestScore = 0;
-  for (const note of notes) {
-    const score = textSimilarity(body, note.body);
-    if (score > bestScore) {
-      bestScore = score;
-      best = note;
-    }
+// 백엔드(requireUser + 커플 연결)가 요구하는 세션이 /minimi 프로토타입에는
+// 아직 없어서, 흔히 겪을 두 상태(로그인 안 됨 / 연인 미연결)만 한글로
+// 풀어주고 나머지는 서버 메시지를 그대로 보여준다.
+function describeApiError(error: unknown): string {
+  if (error instanceof ApiRequestError) {
+    if (error.status === 401) return "로그인이 필요해요.";
+    if (error.status === 403) return "연인과 연결해 주세요.";
+    return error.message;
   }
-  if (ALWAYS_SHOW_MERGE_FOR_TESTING) return best ?? notes[0];
-  return bestScore >= SIMILARITY_THRESHOLD ? best : undefined;
+  return "잠시 후 다시 시도해 주세요.";
 }
 
 export default function NoteListClient() {
-  const [notes, setNotes] = useState<Note[]>(INITIAL_NOTES);
+  const [records, setRecords] = useState<ApiRecord[]>([]);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const [sortOrder, setSortOrder] = useState<"latest" | "oldest">("latest");
   const [isWriteOpen, setIsWriteOpen] = useState(false);
-  const [mergeCandidate, setMergeCandidate] = useState<Note | null>(null);
+  const [mergeCandidate, setMergeCandidate] = useState<ApiMergeCandidate | null>(
+    null
+  );
   const [draft, setDraft] = useState("");
   const [isTextOverflowing, setIsTextOverflowing] = useState(false);
   const [thumbStyle, setThumbStyle] = useState({ top: 0, height: 37 });
@@ -150,18 +123,42 @@ export default function NoteListClient() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [draft, isWriteOpen]);
 
-  const sortedNotes = useMemo(() => {
-    const sorted = [...notes].sort((a, b) => a.id - b.id);
-    return sortOrder === "latest" ? sorted.reverse() : sorted;
-  }, [notes, sortOrder]);
+  useEffect(() => {
+    let cancelled = false;
+    listRecords()
+      .then(({ records }) => {
+        if (!cancelled) setRecords(records);
+      })
+      .catch((error) => {
+        if (!cancelled) setLoadError(describeApiError(error));
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
-  const nextFileNumber =
-    notes.reduce((max, note) => Math.max(max, note.id), 0) + 1;
+  const badgeByRecordId = useMemo(() => buildBadgeMap(records), [records]);
+
+  const sortedRecords = useMemo(() => {
+    const sorted = [...records].sort((a, b) =>
+      a.createdAt.localeCompare(b.createdAt)
+    );
+    return sortOrder === "latest" ? sorted.reverse() : sorted;
+  }, [records, sortOrder]);
+
+  const nextFileNumber = records.length + 1;
 
   const canSubmit = draft.trim().length > 0;
 
-  function handleDelete(id: number) {
-    setNotes((prev) => prev.filter((note) => note.id !== id));
+  async function handleDelete(id: string) {
+    const prev = records;
+    setRecords((current) => current.filter((record) => record.id !== id));
+    try {
+      await deleteRecord(id);
+    } catch (error) {
+      setRecords(prev);
+      setLoadError(describeApiError(error));
+    }
   }
 
   function handleToggleSort() {
@@ -170,6 +167,7 @@ export default function NoteListClient() {
 
   function handleOpenWrite() {
     setDraft("");
+    setSubmitError(null);
     setIsWriteOpen(true);
   }
 
@@ -177,36 +175,57 @@ export default function NoteListClient() {
     setIsWriteOpen(false);
   }
 
-  function handleSubmit() {
+  async function handleSubmit() {
     if (!canSubmit) return;
-    const body = draft.trim();
-    const similar = findSimilarNote(body, notes);
-    const now = new Date();
-    const pad = (n: number) => String(n).padStart(2, "0");
-    const date = `${now.getFullYear()}.${pad(now.getMonth() + 1)}.${pad(
-      now.getDate()
-    )} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
-    // 기록탭에는 유사 여부와 상관없이 항상 기록된다. 병합 여부는
-    // 프로필 탭으로 보낼 정보를 고를 때만 영향을 준다.
-    setNotes((prev) => [
-      { id: nextFileNumber, badge: `file ${nextFileNumber}`, date, body },
-      ...prev,
-    ]);
-    setDraft("");
-    if (similar) {
-      setMergeCandidate(similar);
-    } else {
-      setIsWriteOpen(false);
+    const content = draft.trim();
+    setSubmitError(null);
+    try {
+      const { record } = await createRecord(
+        content,
+        toDateInputValue(new Date())
+      );
+      // 기록탭에는 유사 여부와 상관없이 항상 기록된다. 병합 여부는
+      // 프로필 카드(프로필 탭)를 합칠지에만 영향을 준다.
+      setRecords((prev) => [record, ...prev]);
+      setDraft("");
+
+      const { candidates } = await listMergeCandidates().catch(() => ({
+        candidates: [] as ApiMergeCandidate[],
+      }));
+      const pending = candidates.find(
+        (candidate) => candidate.status === "pending"
+      );
+      if (pending) {
+        setMergeCandidate(pending);
+      } else {
+        setIsWriteOpen(false);
+      }
+    } catch (error) {
+      setSubmitError(describeApiError(error));
     }
   }
 
-  function handleMergeConfirm() {
-    // TODO: 프로필 탭 정보 병합은 아직 연결 전이라 다이얼로그만 닫는다.
+  async function handleMergeConfirm() {
+    if (!mergeCandidate) return;
+    try {
+      await mergeProfileCard(
+        mergeCandidate.sourceCardId,
+        mergeCandidate.targetCardId
+      );
+    } catch (error) {
+      setLoadError(describeApiError(error));
+    }
     setMergeCandidate(null);
     setIsWriteOpen(false);
   }
 
-  function handleMergeDismiss() {
+  async function handleMergeDismiss() {
+    if (!mergeCandidate) return;
+    try {
+      await rejectMergeCandidate(mergeCandidate.id);
+    } catch (error) {
+      setLoadError(describeApiError(error));
+    }
     // 병합을 취소해도 새 기록은 이미 기록탭에 저장된 상태 그대로 남는다.
     setMergeCandidate(null);
     setIsWriteOpen(false);
@@ -274,7 +293,7 @@ export default function NoteListClient() {
       >
         <div className="flex items-center justify-between h-[21px] mt-2 mx-4 font-pixel text-sm text-[#191f28]">
           <p className="m-0">
-            총 <span className="text-[#db2777]">{notes.length}</span>개 기록
+            총 <span className="text-[#db2777]">{records.length}</span>개 기록
           </p>
           <button
             type="button"
@@ -364,29 +383,35 @@ export default function NoteListClient() {
           </button>
         </div>
 
+        {loadError ? (
+          <p className="mx-4 mt-2 font-pixel text-xs text-[#db2777]">
+            {loadError}
+          </p>
+        ) : null}
+
         <div className="flex flex-col gap-2 mt-3 mx-4 pb-[200px]">
-          {sortedNotes.map((note) => (
+          {sortedRecords.map((record) => (
             <article
-              key={note.id}
+              key={record.id}
               className="flex flex-col gap-1.5 px-3 py-3.5 bg-white border-2 border-[#2b1f28] drop-shadow-[2px_2px_0px_rgba(17,17,17,0.2)]"
             >
               <div className="flex items-center gap-1.5 pb-[9px] border-b border-dashed border-[#d1d6db]">
                 <span className="shrink-0 px-[5px] py-px bg-[#fce7f3] border border-[#f9a8d4] font-pixel text-[10px] text-[#db2777] whitespace-nowrap">
-                  {note.badge}
+                  {badgeByRecordId.get(record.id)}
                 </span>
                 <div className="flex-1 min-w-0 flex items-center justify-between font-pixel text-xs tracking-[0.3px] text-[#8b95a1]">
-                  <span>{note.date}</span>
+                  <span>{formatDisplayDate(record.createdAt)}</span>
                   <button
                     type="button"
                     className="m-0 p-0 border-none bg-transparent font-pixel text-xs text-[#8b95a1] cursor-pointer"
-                    onClick={() => handleDelete(note.id)}
+                    onClick={() => handleDelete(record.id)}
                   >
                     삭제
                   </button>
                 </div>
               </div>
               <p className="m-0 font-pixel text-xs tracking-[0.3px] leading-[1.3] text-[#191f28]">
-                {note.body}
+                {record.content}
               </p>
             </article>
           ))}
@@ -539,7 +564,12 @@ export default function NoteListClient() {
               </div>
             </div>
 
-            <div className="relative w-[354px] h-[65px] box-border p-2 bg-[#d8dee9]">
+            <div className="relative w-[354px] min-h-[65px] box-border p-2 bg-[#d8dee9]">
+              {submitError ? (
+                <p className="m-0 mb-1 font-pixel text-[10px] text-[#db2777]">
+                  {submitError}
+                </p>
+              ) : null}
               <ButtonPrimary
                 label="기록하기"
                 className="w-[338px]! mx-auto"
@@ -552,7 +582,7 @@ export default function NoteListClient() {
           {mergeCandidate ? (
             <Window01
               className="absolute left-4 top-[306px] z-[13]"
-              refLabel={`Ref. ${mergeCandidate.badge}`}
+              refLabel={`Ref. ${mergeCandidate.targetCard?.content ?? ""}`}
               primaryLabel="병합하기"
               secondaryLabel="취소"
               onMerge={handleMergeConfirm}
