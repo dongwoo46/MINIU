@@ -26,4 +26,4 @@ Supabase Auth Redirect URL에도 `http://localhost:3000/auth/callback`을 추가
 스키마를 비운 뒤 다시 적용할 때의 순서:
 
 1. `supabase/reset_public_schema.sql` 실행
-2. `supabase/migrations/001_miniu_schema.sql` 실행
+2. `supabase/migrations/*.sql`을 번호 순서대로 실행

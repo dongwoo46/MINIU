@@ -15,7 +15,7 @@ export function fail(error: unknown): NextResponse {
 
   console.error(error);
   return NextResponse.json(
-    { ok: false, error: { code: "INTERNAL_ERROR", message: "Unexpected server error.", details: null } },
+    { ok: false, error: { code: "INTERNAL_ERROR", message: "잠시 후 다시 시도해 주세요.", details: null } },
     { status: 500 },
   );
 }

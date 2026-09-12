@@ -15,11 +15,11 @@ export async function PATCH(request: Request, context: Context) {
     const body = assertObject(await request.json());
     const user = await requireUser();
     if (!(await getSupabaseConnectedCouple(user.id))) {
-      throw new ApiError(403, "FORBIDDEN", "Couple connection is required.");
+      throw new ApiError(403, "FORBIDDEN", "연인과 연결해 주세요.");
     }
     const existing = await selectOne<ProfileCardRow>("profile_cards", `id=eq.${id}&user_id=eq.${user.id}&deleted_at=is.null&select=*`);
     if (!existing) {
-      return Response.json({ ok: false, error: { code: "NOT_FOUND", message: "Profile card was not found.", details: null } }, { status: 404 });
+      return Response.json({ ok: false, error: { code: "NOT_FOUND", message: "프로필 카드를 찾을 수 없어요.", details: null } }, { status: 404 });
     }
 
     const values: Record<string, string | boolean> = { user_edited: true };
@@ -45,11 +45,11 @@ export async function DELETE(_request: Request, context: Context) {
     const { id } = await context.params;
     const user = await requireUser();
     if (!(await getSupabaseConnectedCouple(user.id))) {
-      throw new ApiError(403, "FORBIDDEN", "Couple connection is required.");
+      throw new ApiError(403, "FORBIDDEN", "연인과 연결해 주세요.");
     }
     const existing = await selectOne<ProfileCardRow>("profile_cards", `id=eq.${id}&user_id=eq.${user.id}&deleted_at=is.null&select=id`);
     if (!existing) {
-      return Response.json({ ok: false, error: { code: "NOT_FOUND", message: "Profile card was not found.", details: null } }, { status: 404 });
+      return Response.json({ ok: false, error: { code: "NOT_FOUND", message: "프로필 카드를 찾을 수 없어요.", details: null } }, { status: 404 });
     }
 
     await patchRows("profile_cards", `id=eq.${id}&user_id=eq.${user.id}&deleted_at=is.null`, {

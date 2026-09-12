@@ -15,14 +15,14 @@ export async function POST(_request: Request, context: Context) {
     const { id } = await context.params;
     const user = await requireUser();
     if (!(await getSupabaseConnectedCouple(user.id))) {
-      throw new ApiError(403, "FORBIDDEN", "Couple connection is required.");
+      throw new ApiError(403, "FORBIDDEN", "연인과 연결해 주세요.");
     }
     const record = await selectOne<RecordRow>("records", `id=eq.${id}&user_id=eq.${user.id}&deleted_at=is.null&select=*`);
     if (!record) {
-      return Response.json({ ok: false, error: { code: "NOT_FOUND", message: "Record was not found.", details: null } }, { status: 404 });
+      return Response.json({ ok: false, error: { code: "NOT_FOUND", message: "기록을 찾을 수 없어요.", details: null } }, { status: 404 });
     }
     if (record.analysis_status !== "failed_temporary") {
-      return Response.json({ ok: false, error: { code: "CONFLICT", message: "Record analysis is not retryable.", details: null } }, { status: 409 });
+      return Response.json({ ok: false, error: { code: "CONFLICT", message: "다시 분석할 수 없는 기록이에요.", details: null } }, { status: 409 });
     }
 
     const now = new Date().toISOString();

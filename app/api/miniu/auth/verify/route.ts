@@ -17,7 +17,7 @@ export async function POST(request: Request) {
       type: type && ["signup", "email", "magiclink"].includes(type) ? (type as "signup" | "email" | "magiclink") : "signup",
     });
     if (!userId) {
-      return Response.json({ ok: false, error: { code: "UNAUTHORIZED", message: "Invalid verification token.", details: null } }, { status: 401 });
+      return Response.json({ ok: false, error: { code: "UNAUTHORIZED", message: "인증 링크가 올바르지 않아요.", details: null } }, { status: 401 });
     }
 
     await patchRows("profiles", `id=eq.${userId}`, {
@@ -26,13 +26,16 @@ export async function POST(request: Request) {
     });
     const user = await getProfileById(userId);
     if (!user) {
-      throw new ApiError(500, "INTERNAL_ERROR", "Verified user profile was not found.");
+      throw new ApiError(500, "INTERNAL_ERROR", "계정 정보를 확인하지 못했어요.");
     }
 
     const sessionId = await createAppSession(user.id);
     await setSessionCookie(sessionId);
     return ok({ user: publicUser(user) });
   } catch (error) {
+    if (error instanceof ApiError && (error.status === 400 || error.status === 401 || error.status === 403)) {
+      return Response.json({ ok: false, error: { code: "UNAUTHORIZED", message: "인증 링크가 올바르지 않아요.", details: null } }, { status: 401 });
+    }
     return fail(error);
   }
 }

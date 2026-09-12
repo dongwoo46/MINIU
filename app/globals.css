@@ -30,6 +30,20 @@
   --font-miniu-body: var(--font-body);
   --radius-miniu: var(--radius);
   --shadow-miniu: var(--shadow);
+  /* app/minimi (예은 UI 프로토타입) 픽셀 폰트 토큰 */
+  --font-pixel: "DungGeunMo", monospace;
+}
+
+/* app/minimi 입력창 깜빡이는 커서용. Tailwind arbitrary animate-[miniuBlink_...]가 참조한다 */
+@keyframes miniuBlink {
+  0%,
+  50% {
+    opacity: 1;
+  }
+  50.01%,
+  100% {
+    opacity: 0;
+  }
 }
 
 :root {

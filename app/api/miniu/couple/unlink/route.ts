@@ -1,8 +1,8 @@
-import { requireCouple, requireUser } from "@/app/lib/miniu/auth";
-import { logEvent } from "@/app/lib/miniu/facts";
+import { requireUser } from "@/app/lib/miniu/auth";
+import { getSupabaseConnectedCouple } from "@/app/lib/miniu/couples";
+import { deletionWindow, unlinkCoupleForDeletion } from "@/app/lib/miniu/deletion";
 import { fail, ok } from "@/app/lib/miniu/http";
-import { updateDb } from "@/app/lib/miniu/store";
-import { assertObject, booleanField } from "@/app/lib/miniu/validation";
+import { ApiError, assertObject, booleanField } from "@/app/lib/miniu/validation";
 
 export async function POST(request: Request) {
   try {
@@ -10,42 +10,27 @@ export async function POST(request: Request) {
     const confirmed = booleanField(body, "confirmed");
     if (!confirmed) {
       return Response.json(
-        { ok: false, error: { code: "VALIDATION_ERROR", message: "Unlink confirmation is required.", details: { confirmed: "required" } } },
+        { ok: false, error: { code: "VALIDATION_ERROR", message: "해제 확인이 필요해요.", details: { confirmed: "required" } } },
         { status: 400 },
       );
     }
 
-    const result = await updateDb(async (db) => {
-      const user = await requireUser(db);
-      const couple = requireCouple(db, user.id);
-      const now = new Date();
-      const purgeAfter = new Date(now.getTime() + 1000 * 60 * 60 * 24 * 30).toISOString();
-      couple.status = "unlinkPending";
-      couple.unlinkRequestedAt = now.toISOString();
-      couple.purgeAfter = purgeAfter;
+    const user = await requireUser();
+    const couple = await getSupabaseConnectedCouple(user.id);
+    if (!couple) {
+      throw new ApiError(403, "FORBIDDEN", "연인과 연결해 주세요.");
+    }
 
-      for (const userId of couple.userIds) {
-        db.preQuestions = db.preQuestions.filter((item) => item.userId !== userId);
-        db.minius = db.minius.filter((item) => item.userId !== userId);
-        db.records = db.records.filter((item) => item.userId !== userId);
-        db.profileCards = db.profileCards.filter((item) => item.userId !== userId);
-        const account = db.users.find((item) => item.id === userId);
-        if (account) {
-          account.onboardingStep = "coupleLink";
-        }
-        logEvent(db, { userId, coupleId: couple.id, name: "couple_unlink_requested", metadata: { purgeAfter } });
-      }
-
-      for (const invitation of db.invitations) {
-        if (couple.userIds.includes(invitation.createdByUserId) && invitation.status === "pending") {
-          invitation.status = "expired";
-        }
-      }
-
-      return { coupleId: couple.id, purgeAfter };
+    const { deletedAt, purgeAfter } = deletionWindow();
+    await unlinkCoupleForDeletion({
+      couple,
+      requestedByUserId: user.id,
+      deletedAt,
+      purgeAfter,
+      eventName: "couple_unlink_requested",
     });
 
-    return ok(result);
+    return ok({ coupleId: couple.id, purgeAfter });
   } catch (error) {
     return fail(error);
   }
