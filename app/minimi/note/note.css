@@ -56,8 +56,10 @@
   cursor: pointer;
 }
 
-.miniuNote__sortArrow {
-  font-size: 12px;
+/* Figma node 157:16001 "sort-horizontal" 아이콘 */
+.miniuNote__sortIcon {
+  flex-shrink: 0;
+  color: #191f28;
 }
 
 /*
@@ -159,7 +161,7 @@
   pointer-events: none;
 }
 
-.miniuNote__footer .miniuHome__banner,
+.miniuNote__footer .miniuButton,
 .miniuNote__footer .miniuHome__navItem {
   pointer-events: auto;
 }
@@ -175,7 +177,11 @@
   inset: 0;
 }
 
-.miniuNote__writeBanner {
+/*
+  .miniuButton의 width:100%와 클래스 특이도가 같아서 스타일시트 로드
+  순서에 따라 358px가 밀려날 수 있어, 클래스를 묶어 특이도를 올려둔다.
+*/
+.miniuButton.miniuNote__writeBanner {
   position: absolute;
   left: 16px;
   top: 31px;
@@ -195,6 +201,23 @@
   border: 2px solid #fff;
   box-shadow: 2px 2px 0px 0px rgba(17, 17, 17, 0.2);
   z-index: 11;
+}
+
+/* 병합 확인 팝업 (note_merge, node 157:15512). 기록 팝업(z-index:11) 위에 뜬다 */
+.miniuNote__mergeDialog {
+  position: absolute;
+  left: 16px;
+  top: 306px;
+  z-index: 13;
+}
+
+/*
+  병합 팝업이 떠 있을 때는 dim이 기록 팝업(z-index:11)까지 같이 가려서
+  병합 팝업(z-index:13) 바로 뒤에 오도록 그 사이 정수 값으로 올린다.
+  (z-index는 정수만 유효해서 11.5처럼 소수를 쓰면 무시된다.)
+*/
+.miniuHome__dim.miniuNote__dim--aboveWritePopup {
+  z-index: 12;
 }
 
 .miniuNote__menuStrip {
@@ -304,13 +327,8 @@
   background: #d8dee9;
 }
 
-.miniuNote__submitBtn {
+/* 미입력시 비활성화 스타일은 ButtonPrimary(.miniuButton:disabled)가 처리한다 */
+.miniuButton.miniuNote__submitBtn {
   width: 338px;
   margin: 0 auto;
-}
-
-/* 미입력시, 버튼 비활성화 */
-.miniuNote__submitBtn--disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
 }

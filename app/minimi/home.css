@@ -634,32 +634,6 @@
   color: #333d4b;
 }
 
-/* Banner */
-.miniuHome__banner {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  width: 100%;
-  padding: 14px 2px;
-  border: 2px solid #2b1f28;
-  background: linear-gradient(to bottom, #fff, #f8bbd7, #db2777);
-  filter: drop-shadow(2px 2px 0px rgba(17, 17, 17, 0.2));
-  cursor: pointer;
-}
-
-.miniuHome__banner p {
-  margin: 0;
-  font-family: "DungGeunMo", monospace;
-  font-size: 14px;
-  color: #2b1f28;
-}
-
-.miniuHome__bannerArrow {
-  font-size: 10px !important;
-  transform: rotate(-90deg);
-}
-
 /* Nav */
 /* homeIndicator(34px) 바로 위에 붙도록 statusBar/homeIndicator처럼 절대 위치로 고정 */
 .miniuHome__nav {

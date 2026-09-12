@@ -1,0 +1,59 @@
+/*
+  Figma "component" 섹션(node 158:47252)의 button_primary/button_secondary.
+  두 버튼 모두 높이 42px, 폰트/트래킹이 같아서 공통 클래스로 묶고
+  배경/보더/그림자만 modifier로 구분한다.
+*/
+.miniuButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  width: 100%;
+  height: 42px;
+  padding: 8px 12px;
+  margin: 0;
+  border: 2px solid #2b1f28;
+  cursor: pointer;
+  font-family: "DungGeunMo", monospace;
+  font-size: 12px;
+  letter-spacing: 0.3px;
+  color: #191f28;
+}
+
+.miniuButton--primary {
+  background: linear-gradient(to bottom, #fff, #f296c1, #db2777);
+}
+
+.miniuButton__arrow {
+  display: inline-block;
+  font-size: 8px;
+  transform: rotate(-90deg);
+}
+
+.miniuButton--secondary {
+  background: #d8dee9;
+  border: 1.6px solid #fff;
+  box-shadow: 1px 1px 0px rgba(0, 0, 0, 0.2);
+}
+
+.miniuButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Figma node 158:47150 (button_default) / 158:47241 (button_popup): primary+secondary 세트 */
+.miniuButtonGroup {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  width: 100%;
+}
+
+.miniuButtonGroup--default {
+  padding: 24px 16px;
+}
+
+.miniuButtonGroup--popup {
+  padding: 8px;
+}

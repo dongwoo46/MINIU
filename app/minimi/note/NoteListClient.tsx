@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { ButtonPrimary } from "../components/Buttons";
+import { Window01 } from "../components/DialogWindows";
 
 const MAX_NOTE_LENGTH = 150;
 
@@ -56,10 +58,51 @@ const INITIAL_NOTES: Note[] = [
   },
 ];
 
+// AI 유사 기록 판별은 아직 붙지 않아서, 단어 겹침 비율로 유사도를 어림하는
+// 임시 휴리스틱을 대신 쓴다(2인 사이드프로젝트 규모의 목업).
+function textSimilarity(a: string, b: string): number {
+  const tokenize = (text: string) =>
+    new Set(
+      text
+        .replace(/[.,!?~]/g, "")
+        .split(/\s+/)
+        .filter(Boolean)
+    );
+  const setA = tokenize(a);
+  const setB = tokenize(b);
+  if (setA.size === 0 || setB.size === 0) return 0;
+  let intersection = 0;
+  for (const token of setA) {
+    if (setB.has(token)) intersection++;
+  }
+  const union = setA.size + setB.size - intersection;
+  return union === 0 ? 0 : intersection / union;
+}
+
+const SIMILARITY_THRESHOLD = 0.5;
+
+// TODO: 병합 팝업 확인용 임시 스위치. 확인 끝나면 false로 되돌릴 것.
+const ALWAYS_SHOW_MERGE_FOR_TESTING = true;
+
+function findSimilarNote(body: string, notes: Note[]): Note | undefined {
+  let best: Note | undefined;
+  let bestScore = 0;
+  for (const note of notes) {
+    const score = textSimilarity(body, note.body);
+    if (score > bestScore) {
+      bestScore = score;
+      best = note;
+    }
+  }
+  if (ALWAYS_SHOW_MERGE_FOR_TESTING) return best ?? notes[0];
+  return bestScore >= SIMILARITY_THRESHOLD ? best : undefined;
+}
+
 export default function NoteListClient() {
   const [notes, setNotes] = useState<Note[]>(INITIAL_NOTES);
   const [sortOrder, setSortOrder] = useState<"latest" | "oldest">("latest");
   const [isWriteOpen, setIsWriteOpen] = useState(false);
+  const [mergeCandidate, setMergeCandidate] = useState<Note | null>(null);
   const [draft, setDraft] = useState("");
   const [isTextOverflowing, setIsTextOverflowing] = useState(false);
   const [thumbStyle, setThumbStyle] = useState({ top: 0, height: 37 });
@@ -129,15 +172,36 @@ export default function NoteListClient() {
 
   function handleSubmit() {
     if (!canSubmit) return;
+    const body = draft.trim();
+    const similar = findSimilarNote(body, notes);
     const now = new Date();
     const pad = (n: number) => String(n).padStart(2, "0");
     const date = `${now.getFullYear()}.${pad(now.getMonth() + 1)}.${pad(
       now.getDate()
     )} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+    // 기록탭에는 유사 여부와 상관없이 항상 기록된다. 병합 여부는
+    // 프로필 탭으로 보낼 정보를 고를 때만 영향을 준다.
     setNotes((prev) => [
-      { id: nextFileNumber, badge: `file ${nextFileNumber}`, date, body: draft.trim() },
+      { id: nextFileNumber, badge: `file ${nextFileNumber}`, date, body },
       ...prev,
     ]);
+    setDraft("");
+    if (similar) {
+      setMergeCandidate(similar);
+    } else {
+      setIsWriteOpen(false);
+    }
+  }
+
+  function handleMergeConfirm() {
+    // TODO: 프로필 탭 정보 병합은 아직 연결 전이라 다이얼로그만 닫는다.
+    setMergeCandidate(null);
+    setIsWriteOpen(false);
+  }
+
+  function handleMergeDismiss() {
+    // 병합을 취소해도 새 기록은 이미 기록탭에 저장된 상태 그대로 남는다.
+    setMergeCandidate(null);
     setIsWriteOpen(false);
   }
 
@@ -197,7 +261,85 @@ export default function NoteListClient() {
             onClick={handleToggleSort}
           >
             <span>{sortOrder === "latest" ? "최신순" : "오래된순"}</span>
-            <span className="miniuNote__sortArrow">▼</span>
+            <svg
+              className="miniuNote__sortIcon"
+              width="16"
+              height="16"
+              viewBox="0 0 16 16"
+              fill="none"
+              aria-hidden="true"
+            >
+              <rect
+                x="13.3333"
+                y="10.6666"
+                width="1.33333"
+                height="10.6667"
+                transform="rotate(90 13.3333 10.6666)"
+                fill="currentColor"
+              />
+              <rect
+                x="6.66669"
+                y="9.33337"
+                width="1.33333"
+                height="2.66667"
+                transform="rotate(90 6.66669 9.33337)"
+                fill="currentColor"
+              />
+              <rect
+                x="6.66669"
+                y="8"
+                width="1.33333"
+                height="1.33333"
+                transform="rotate(90 6.66669 8)"
+                fill="currentColor"
+              />
+              <rect
+                x="6.66669"
+                y="12"
+                width="1.33333"
+                height="2.66667"
+                transform="rotate(90 6.66669 12)"
+                fill="currentColor"
+              />
+              <rect
+                x="6.66669"
+                y="13.3334"
+                width="1.33333"
+                height="1.33333"
+                transform="rotate(90 6.66669 13.3334)"
+                fill="currentColor"
+              />
+              <rect
+                width="1.33333"
+                height="10.6667"
+                transform="matrix(-4.37114e-08 1 1 4.37114e-08 2.66663 4)"
+                fill="currentColor"
+              />
+              <rect
+                width="1.33333"
+                height="2.66667"
+                transform="matrix(-4.37114e-08 1 1 4.37114e-08 9.33331 2.66663)"
+                fill="currentColor"
+              />
+              <rect
+                width="1.33333"
+                height="1.33333"
+                transform="matrix(-4.37114e-08 1 1 4.37114e-08 9.33331 1.33337)"
+                fill="currentColor"
+              />
+              <rect
+                width="1.33333"
+                height="2.66667"
+                transform="matrix(-4.37114e-08 1 1 4.37114e-08 9.33331 5.33337)"
+                fill="currentColor"
+              />
+              <rect
+                width="1.33333"
+                height="1.33333"
+                transform="matrix(-4.37114e-08 1 1 4.37114e-08 9.33331 6.66663)"
+                fill="currentColor"
+              />
+            </svg>
           </button>
         </div>
 
@@ -247,15 +389,12 @@ export default function NoteListClient() {
               "linear-gradient(to bottom, transparent 0%, black 100%)",
           }}
         />
-        <button
-          type="button"
-          className="miniuHome__banner miniuNote__writeBanner"
+        <ButtonPrimary
+          label="기록하기"
+          className="miniuNote__writeBanner"
           onClick={handleOpenWrite}
           onWheel={forwardWheelToList}
-        >
-          <p>기록하기</p>
-          <p className="miniuHome__bannerArrow">▼</p>
-        </button>
+        />
 
         <nav className="miniuHome__nav" onWheel={forwardWheelToList}>
           <Link
@@ -286,8 +425,12 @@ export default function NoteListClient() {
       {isWriteOpen ? (
         <>
           <div
-            className="miniuHome__dim"
-            onClick={handleCloseWrite}
+            className={
+              mergeCandidate
+                ? "miniuHome__dim miniuNote__dim--aboveWritePopup"
+                : "miniuHome__dim"
+            }
+            onClick={mergeCandidate ? undefined : handleCloseWrite}
             aria-hidden="true"
           />
 
@@ -365,19 +508,25 @@ export default function NoteListClient() {
             </div>
 
             <div className="miniuNote__popupUnderbar">
-              <button
-                type="button"
-                className={`miniuHome__banner miniuNote__submitBtn${
-                  canSubmit ? "" : " miniuNote__submitBtn--disabled"
-                }`}
+              <ButtonPrimary
+                label="기록하기"
+                className="miniuNote__submitBtn"
                 onClick={handleSubmit}
                 disabled={!canSubmit}
-              >
-                <p>기록하기</p>
-                <p className="miniuHome__bannerArrow">▼</p>
-              </button>
+              />
             </div>
           </div>
+
+          {mergeCandidate ? (
+            <Window01
+              className="miniuNote__mergeDialog"
+              refLabel={`Ref. ${mergeCandidate.badge}`}
+              primaryLabel="병합하기"
+              secondaryLabel="취소"
+              onMerge={handleMergeConfirm}
+              onDismiss={handleMergeDismiss}
+            />
+          ) : null}
         </>
       ) : null}
     </div>

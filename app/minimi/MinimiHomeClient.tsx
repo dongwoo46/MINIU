@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { truncateBubbleText } from "./lib/text";
+import { ButtonPrimary } from "./components/Buttons";
 
 const BUBBLE_TEXT =
   '"진우야 오늘도 수고많았어! 오늘 날씨 너무 덥다. 더위 조심해~"';
@@ -233,14 +234,10 @@ export default function MinimiHomeClient() {
             </div>
           </div>
 
-          <button
-            type="button"
-            className="miniuHome__banner"
+          <ButtonPrimary
+            label="진우 집 놀러가기"
             onClick={() => setShowHomePopup(true)}
-          >
-            <p>진우 집 놀러가기</p>
-            <p className="miniuHome__bannerArrow">▼</p>
-          </button>
+          />
         </div>
       </div>
 
