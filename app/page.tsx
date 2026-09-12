@@ -635,7 +635,7 @@ export default function Home() {
                 </div>
                 <div className="login-actions">
                   <Button type="button" fullWidth disabled={!signupFieldsComplete} className="login-submit" onClick={() => setShowConsentSheet(true)}>
-                    <span className="text-label-en">NEXT ▶</span>
+                    <span className="text-label-kr">다음 ▶</span>
                   </Button>
                   <button className="login-signup-link text-label-kr" type="button" onClick={() => setMode("login")}>이미 계정이 있어요</button>
                 </div>
@@ -687,7 +687,7 @@ export default function Home() {
                         </div>
                       </div>
                       <Button type="submit" fullWidth disabled={pending || !allRequiredChecked || under14} className="login-submit">
-                        <span className="text-label-en">DONE ▶</span>
+                        <span className="text-label-kr">가입하기 ▶</span>
                       </Button>
                     </div>
                   </form>
@@ -714,7 +714,7 @@ export default function Home() {
                 </div>
                 <div className="login-actions">
                   <Button type="submit" fullWidth disabled={pending} className="login-submit">
-                    <span className="text-label-en">LOGIN ▶</span>
+                    <span className="text-label-kr">로그인 ▶</span>
                   </Button>
                   <button className="login-signup-link text-label-kr" type="button" onClick={() => setMode("signup")}>새 계정 만들기</button>
                   {process.env.NODE_ENV !== "production" && (
@@ -753,7 +753,7 @@ export default function Home() {
             </div>
             <div className="login-actions">
               <Button type="button" fullWidth disabled={Boolean(partnerBirthDateError)} className="login-submit" onClick={() => setMode("avatarStyle")}>
-                <span className="text-label-en">NEXT ▶</span>
+                <span className="text-label-kr">다음 ▶</span>
               </Button>
               <button className="login-signup-link text-label-kr" type="button" onClick={() => setMode("login")}>로그인으로 돌아가기</button>
             </div>
@@ -846,7 +846,7 @@ export default function Home() {
             </div>
             <div className="login-actions">
               <Button type="button" fullWidth className="login-submit" onClick={() => setMode("speechStyle")}>
-                <span className="text-label-en">NEXT ▶</span>
+                <span className="text-label-kr">다음 ▶</span>
               </Button>
               <button className="login-signup-link text-label-kr" type="button" onClick={() => setMode("partnerInfo")}>이전으로 돌아가기</button>
             </div>
@@ -921,7 +921,7 @@ export default function Home() {
             </div>
             <div className="login-actions">
               <Button type="button" fullWidth className="login-submit" disabled={!speechChoice || (speechChoice === "image" && speechPhotos.length === 0)} onClick={() => setMode("partnerProfile")}>
-                <span className="text-label-en">NEXT ▶</span>
+                <span className="text-label-kr">다음 ▶</span>
               </Button>
               <button className="login-signup-link text-label-kr" type="button" onClick={() => setMode("avatarStyle")}>이전으로 돌아가기</button>
             </div>
@@ -956,7 +956,7 @@ export default function Home() {
             </p>
             <div className="login-actions">
               <Button type="button" fullWidth className="login-submit" disabled={!partnerProfileComplete} onClick={() => setShowMinimiCreatedPopup(true)}>
-                <span className="text-label-en">NEXT ▶</span>
+                <span className="text-label-kr">다음 ▶</span>
               </Button>
               <button className="login-signup-link text-label-kr" type="button" onClick={() => setMode("speechStyle")}>이전으로 돌아가기</button>
             </div>
@@ -967,9 +967,11 @@ export default function Home() {
                     <p className="popup-alert-title">연인 미니미가 생성됐어요!</p>
                     <p className="popup-alert-desc">이제 미니미와 함께 연인을 알아가봐요</p>
                   </div>
-                  <Button type="button" fullWidth className="login-submit" onClick={() => { setShowMinimiCreatedPopup(false); setMode("login"); }}>
-                    <span className="text-label-en">OK</span>
-                  </Button>
+                  <div className="popup-alert-actions">
+                    <Button type="button" fullWidth className="login-submit" onClick={() => { setShowMinimiCreatedPopup(false); setMode("login"); }}>
+                      <span className="text-label-kr">확인 ▶</span>
+                    </Button>
+                  </div>
                 </div>
               </div>
             )}
@@ -1014,7 +1016,7 @@ export default function Home() {
             <p className="step-option-caption step-option-caption--left">대화는 말투를 학습하는 데만 사용되며,<br />학습이 끝나면 바로 삭제돼요.</p>
             <div className="login-actions">
               <Button type="button" fullWidth className="login-submit" onClick={() => setShowCoupleConnectedPopup(true)}>
-                <span className="text-label-en">DONE ▶</span>
+                <span className="text-label-kr">완료 ▶</span>
               </Button>
               <button className="login-signup-link text-label-kr" type="button" onClick={() => setMode("homeCase1")}>홈 먼저 둘러보기</button>
             </div>
@@ -1025,9 +1027,11 @@ export default function Home() {
                     <p className="popup-alert-title">연결이 완료됐어요!</p>
                     <p className="popup-alert-desc">이제 연인 미니미를 생성해보세요</p>
                   </div>
-                  <Button type="button" fullWidth className="login-submit" onClick={() => { setShowCoupleConnectedPopup(false); setMode("homeCase2"); }}>
-                    <span className="text-label-en">OK</span>
-                  </Button>
+                  <div className="popup-alert-actions">
+                    <Button type="button" fullWidth className="login-submit" onClick={() => { setShowCoupleConnectedPopup(false); setMode("homeCase2"); }}>
+                      <span className="text-label-kr">확인 ▶</span>
+                    </Button>
+                  </div>
                 </div>
               </div>
             )}
@@ -1306,9 +1310,11 @@ function CoupleConnectedPopup({ onClose }: { onClose: () => void }) {
           <p className="popup-alert-title">연결이 완료됐어요!</p>
           <p className="popup-alert-desc">이제 연인 미니미를 생성해보세요</p>
         </div>
-        <Button type="button" fullWidth className="login-submit" onClick={onClose}>
-          <span className="text-label-en">OK</span>
-        </Button>
+        <div className="popup-alert-actions">
+          <Button type="button" fullWidth className="login-submit" onClick={onClose}>
+            <span className="text-label-kr">확인 ▶</span>
+          </Button>
+        </div>
       </div>
     </div>
   );
