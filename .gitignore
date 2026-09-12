@@ -24,7 +24,58 @@ coverage/
 .env
 .env.*
 !.env.example
+!.env.sample
+!.env.template
+!.env.defaults
+*.env
+*.env.*
+*.local
+*.secret
+*.secrets
+secrets/
+secret/
+private/
+credentials/
 *.pem
+*.key
+*.cert
+*.crt
+*.p12
+*.pfx
+*.jks
+*.keystore
+*.asc
+*.gpg
+id_rsa
+id_rsa.*
+id_dsa
+id_dsa.*
+id_ecdsa
+id_ecdsa.*
+id_ed25519
+id_ed25519.*
+*.ppk
+*.kdbx
+*.ovpn
+*.mobileprovision
+*.provisionprofile
+service-account*.json
+*service-account*.json
+firebase-adminsdk*.json
+google-services.json
+GoogleService-Info.plist
+aws-exports.js
+aws-credentials
+credentials.json
+token.json
+tokens.json
+config/secrets.*
+config/local.*
+*.tfvars
+*.tfstate
+*.tfstate.*
+terraform.tfstate.d/
+.terraform/
 
 # Deployment
 .vercel/
@@ -54,8 +105,26 @@ Desktop.ini
 # Local project tooling
 .serena/
 .devkit/
+.claude/settings.local.json
+.codex/local/
+.codex/sessions/
 
 # Generated project records
 docs/run-log/
 docs/performance/
 docs/proposals/
+
+# Local databases and uploads
+.data/
+*.sqlite
+*.sqlite3
+*.db
+*.db-shm
+*.db-wal
+*.dump
+*.sql
+!supabase/
+!supabase/**/*.sql
+uploads/
+tmp/
+temp/

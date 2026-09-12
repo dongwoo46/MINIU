@@ -1,0 +1,4 @@
+/** Code-native placeholder. Replace with approved sprite assets in public/minimi. */
+export function MinimiAvatar({ small = false }: { small?: boolean }) {
+  return <svg className={`minimi-avatar ${small ? "minimi-avatar--small" : ""}`} viewBox="0 0 32 44" role="img" aria-label="진우의 미니유 임시 캐릭터" shapeRendering="crispEdges"><ellipse cx="16" cy="41" rx="12" ry="2" fill="#61475c" opacity=".12"/><path fill="#493b3e" d="M9 3h14v2h3v14H6V7h3z"/><path fill="#f4c5aa" d="M9 11h15v11h-3v3H12v-3H9zM7 14h2v5H7"/><path fill="#493b3e" d="M9 8h15v6h-3v-3h-4v3H9zM12 16h2v2h-2zM20 16h2v2h-2z"/><path fill="#da917e" d="M16 20h3v1h-3z"/><path fill="#a7b1d7" d="M10 25h12v3h3v9H7v-9h3z"/><path fill="#f6d9bc" d="M7 30h3v6H7zM22 30h3v6h-3z"/><path fill="#505579" d="M10 35h12v6h-5v-4h-2v4h-5z"/><path fill="#493b3e" d="M8 40h7v2H8zM17 40h7v2h-7z"/></svg>;
+}
