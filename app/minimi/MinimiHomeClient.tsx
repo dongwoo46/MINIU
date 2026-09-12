@@ -1,16 +1,72 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { truncateBubbleText } from "./lib/text";
 
 const BUBBLE_TEXT =
   '"진우야 오늘도 수고많았어! 오늘 날씨 너무 덥다. 더위 조심해~"';
 
-const INPUT_TEXT =
-  "진우야 사랑한다. 진짜로 너무 사랑한다. 앞으로도 잘 부탁해! 진우야 사랑한다. 진짜로 너무 사랑한다. 앞으로도 잘 부탁해!진우야 사랑한다. 진짜로 너무";
-
 export default function MinimiHomeClient() {
   const [showHomePopup, setShowHomePopup] = useState(false);
+  const [message, setMessage] = useState("");
+  const [isMessageFocused, setIsMessageFocused] = useState(false);
+  const [isMessageOverflowing, setIsMessageOverflowing] = useState(false);
+  const [thumbStyle, setThumbStyle] = useState({ top: 0, height: 37 });
+  const messageRef = useRef<HTMLTextAreaElement>(null);
+  const messageTrackRef = useRef<HTMLDivElement>(null);
+  const MIN_THUMB_HEIGHT = 24;
+  // 기본 1줄(박스 전체 40px = 콘텐츠 20px + 상하 패딩 20px), 2줄부터 늘어나
+  // 최대 박스 84px(콘텐츠 64px)까지 커지고 그 이상은 스크롤 처리한다.
+  const INPUT_MIN_CONTENT_HEIGHT = 20;
+  const INPUT_MAX_CONTENT_HEIGHT = 64;
+
+  function updateThumbPosition() {
+    const el = messageRef.current;
+    if (!el) return;
+    // 트랙(.miniuHome__scrollTrack)은 inputBox 패딩까지 포함해 textarea보다
+    // 크므로, 손잡이가 트랙 끝까지 닿으려면 트랙 자체의 실제 높이를 재야 한다.
+    const trackHeight = messageTrackRef.current?.clientHeight ?? el.clientHeight;
+    const thumbHeight = Math.max(
+      MIN_THUMB_HEIGHT,
+      (el.clientHeight / el.scrollHeight) * trackHeight
+    );
+    const maxScrollTop = el.scrollHeight - el.clientHeight;
+    const maxThumbTop = trackHeight - thumbHeight;
+    const thumbTop =
+      maxScrollTop > 0 ? (el.scrollTop / maxScrollTop) * maxThumbTop : 0;
+
+    setThumbStyle({ top: thumbTop, height: thumbHeight });
+  }
+
+  function resizeMessageInput() {
+    const el = messageRef.current;
+    if (!el) return;
+
+    el.style.height = "auto";
+    const naturalHeight = el.scrollHeight;
+    const nextHeight = Math.min(
+      Math.max(naturalHeight, INPUT_MIN_CONTENT_HEIGHT),
+      INPUT_MAX_CONTENT_HEIGHT
+    );
+    el.style.height = `${nextHeight}px`;
+
+    const overflowing = naturalHeight > INPUT_MAX_CONTENT_HEIGHT;
+    setIsMessageOverflowing(overflowing);
+    if (overflowing) updateThumbPosition();
+  }
+
+  useEffect(() => {
+    resizeMessageInput();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [message]);
+
+  useEffect(() => {
+    // 트랙이 방금 화면에 나타난 시점(ref가 이제 막 붙은 시점)에도 트랙의
+    // 실제 높이로 다시 계산해서 손잡이가 트랙 끝까지 닿게 한다.
+    if (isMessageOverflowing) updateThumbPosition();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isMessageOverflowing]);
 
   return (
     <div className="miniuHome">
@@ -129,14 +185,41 @@ export default function MinimiHomeClient() {
                 <div className="miniuHome__inputWrap">
                   <div className="miniuHome__inputBox">
                     <textarea
+                      ref={messageRef}
                       className="miniuHome__input"
+                      rows={1}
                       maxLength={100}
-                      defaultValue={INPUT_TEXT}
+                      value={message}
+                      onChange={(e) => setMessage(e.target.value)}
+                      onScroll={updateThumbPosition}
+                      onFocus={() => setIsMessageFocused(true)}
+                      onBlur={() => setIsMessageFocused(false)}
                       aria-label="진우에게 보낼 메시지 (최대 100자)"
                     />
-                    <div className="miniuHome__scrollTrack" aria-hidden="true">
-                      <div className="miniuHome__scrollThumb" />
-                    </div>
+                    {!isMessageFocused && message.length === 0 ? (
+                      <div
+                        className="miniuHome__inputPlaceholder"
+                        aria-hidden="true"
+                      >
+                        <span>진우에게 사랑의 메시지...</span>
+                        <span className="miniuHome__inputCursor">|</span>
+                      </div>
+                    ) : null}
+                    {isMessageOverflowing ? (
+                      <div
+                        ref={messageTrackRef}
+                        className="miniuHome__scrollTrack"
+                        aria-hidden="true"
+                      >
+                        <div
+                          className="miniuHome__scrollThumb"
+                          style={{
+                            top: `${thumbStyle.top}px`,
+                            height: `${thumbStyle.height}px`,
+                          }}
+                        />
+                      </div>
+                    ) : null}
                   </div>
                   <button type="button" className="miniuHome__sendBtn">
                     <p>Send</p>
@@ -166,13 +249,13 @@ export default function MinimiHomeClient() {
           <img src="/minimi/nav-home.png" alt="" aria-hidden="true" />
           <p>홈</p>
         </button>
-        <button
-          type="button"
+        <Link
+          href="/minimi/note"
           className="miniuHome__navItem miniuHome__navItem--inactive"
         >
           <img src="/minimi/nav-record.png" alt="" aria-hidden="true" />
           <p>기록</p>
-        </button>
+        </Link>
         <button
           type="button"
           className="miniuHome__navItem miniuHome__navItem--inactive"
