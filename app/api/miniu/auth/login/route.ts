@@ -1,7 +1,6 @@
 import { createAppSession, getProfileById, publicUser, restoreProfileDeletion, setSessionCookie } from "@/app/lib/miniu/auth";
-import { logEvent } from "@/app/lib/miniu/facts";
+import { logSupabaseEvent } from "@/app/lib/miniu/events";
 import { fail, ok } from "@/app/lib/miniu/http";
-import { updateDb } from "@/app/lib/miniu/store";
 import { assertObject, normalizeEmail, stringField } from "@/app/lib/miniu/validation";
 import { verifySupabasePassword } from "@/app/lib/miniu/supabase-auth";
 
@@ -28,9 +27,7 @@ export async function POST(request: Request) {
     }
 
     const sessionId = await createAppSession(user.id);
-    await updateDb((db) => {
-      logEvent(db, { userId: user.id, name: "login_completed" });
-    });
+    await logSupabaseEvent({ userId: user.id, name: "login_completed" });
     await setSessionCookie(sessionId);
     return ok({ user: publicUser(user) });
   } catch (error) {

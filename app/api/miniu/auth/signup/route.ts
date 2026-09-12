@@ -1,8 +1,7 @@
 import { publicUser, getProfileByEmail, getProfileById } from "@/app/lib/miniu/auth";
 import { insertSignupConsents, requiredSignupConsentFields, type SignupConsentInput } from "@/app/lib/miniu/consents";
-import { logEvent } from "@/app/lib/miniu/facts";
+import { logSupabaseEvent } from "@/app/lib/miniu/events";
 import { fail, ok } from "@/app/lib/miniu/http";
-import { updateDb } from "@/app/lib/miniu/store";
 import { insertRows } from "@/app/lib/miniu/supabase";
 import { createSupabaseAuthUser, deleteSupabaseAuthUser } from "@/app/lib/miniu/supabase-auth";
 import {
@@ -71,9 +70,7 @@ export async function POST(request: Request) {
         userAgent: request.headers.get("user-agent"),
       });
 
-      await updateDb((db) => {
-        logEvent(db, { userId, name: "signup_completed" });
-      });
+      await logSupabaseEvent({ userId, name: "signup_completed" });
 
       const user = await getProfileById(userId);
       if (!user) {
