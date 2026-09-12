@@ -7,10 +7,10 @@ import { Icon } from "@/shared/ui/icon";
 import { Surface } from "@/shared/ui/surface";
 import { TextField } from "@/shared/ui/text-field";
 import { Toast } from "@/shared/ui/toast";
+import { HomePreview } from "@/widgets/home-preview";
 import { LetterPreview } from "@/widgets/letter-preview";
 import { ProfilePreview } from "@/widgets/profile-preview";
 import { MobileShell } from "@/widgets/mobile-shell";
-import { SetupPreview } from "@/widgets/setup-preview";
 
 type PublicUser = {
   id: string;
@@ -210,6 +210,7 @@ export default function Home() {
   const [emailVerifyError, setEmailVerifyError] = useState(false);
   const [emailVerifySeconds, setEmailVerifySeconds] = useState(EMAIL_CODE_SECONDS);
   const [me, setMe] = useState<MeData | null>(null);
+  const [authChecked, setAuthChecked] = useState(false);
   const [showCoupleJustConnectedPopup, setShowCoupleJustConnectedPopup] = useState(false);
   const [pending, setPending] = useState(false);
   const [invitation, setInvitation] = useState<PublicInvitation | null>(null);
@@ -245,21 +246,22 @@ export default function Home() {
   });
 
   useEffect(() => {
-    fetch("/api/miniu/me", { cache: "no-store" })
+    fetch("/api/miniu/me", { cache: "no-store", credentials: "include" })
       .then((response) => response.json())
       .then((payload: ApiSuccess<MeData> | ApiFailure) => {
         if (payload.ok) {
           setMe(payload.data);
         }
       })
-      .catch(() => undefined);
+      .catch(() => undefined)
+      .finally(() => setAuthChecked(true));
   }, []);
 
   useEffect(() => {
     if (!me || me.user.onboardingStep !== "coupleLink") {
       return;
     }
-    fetch("/api/miniu/invitations", { cache: "no-store" })
+    fetch("/api/miniu/invitations", { cache: "no-store", credentials: "include" })
       .then((response) => response.json())
       .then((payload: ApiSuccess<{ invitation: PublicInvitation | null }> | ApiFailure) => {
         if (payload.ok) {
@@ -289,7 +291,7 @@ export default function Home() {
     }
     let cancelled = false;
     const timer = setInterval(() => {
-      fetch("/api/miniu/me", { cache: "no-store" })
+      fetch("/api/miniu/me", { cache: "no-store", credentials: "include" })
         .then((response) => response.json())
         .then((payload: ApiSuccess<MeData> | ApiFailure) => {
           if (!cancelled && payload.ok && payload.data.couple) {
@@ -434,6 +436,7 @@ export default function Home() {
     try {
       const response = await fetch(path, {
         method: body ? method : "GET",
+        credentials: "include",
         headers: body ? { "Content-Type": "application/json" } : undefined,
         body: body ? JSON.stringify(body) : undefined,
       });
@@ -450,6 +453,7 @@ export default function Home() {
   async function loadMe() {
     const data = await requestJson<MeData>("/api/miniu/me");
     setMe(data);
+    setAuthChecked(true);
   }
 
   async function submitSignup(event: FormEvent<HTMLFormElement>) {
@@ -501,6 +505,7 @@ export default function Home() {
     try {
       await requestJson<{ loggedOut: boolean }>("/api/miniu/auth/logout", {});
       setMe(null);
+      setAuthChecked(true);
       setMode("login");
       setToast("로그아웃됐어요.");
     } catch (error) {
@@ -560,6 +565,22 @@ export default function Home() {
     } catch (error) {
       setToast(error instanceof Error ? error.message : "사전 질문 저장에 실패했어요.");
     }
+  }
+
+  if (!authChecked && !me) {
+    return (
+      <AuthShell hideTopBar mainClassName="login-main">
+        <div className="login-screen">
+          <Image src="/login/bg-decor.png" alt="" width={404} height={404} className="login-bg-decor" priority aria-hidden />
+          <span className="login-logo text-display-m">MINIU</span>
+          <div className="login-card">
+            <div className="login-panel">
+              <AuthHeading title="로그인 상태 확인 중" description="잠시만 기다려주세요." />
+            </div>
+          </div>
+        </div>
+      </AuthShell>
+    );
   }
 
   if (!me) {
@@ -1247,7 +1268,7 @@ export default function Home() {
     <MobileShell active={tab} onTabChange={(next) => { setTab(next); setToast(""); }}>
       <div className="auth-user-strip"><span>{user.name}님</span><button type="button" onClick={logout}>로그아웃</button></div>
       {!me.couple && <Surface className="onboarding-banner"><strong>연인과 연결하기</strong><span>홈은 볼 수 있지만 기록·프로필·문자·채팅은 연결 후 열려요.</span></Surface>}
-      {tab === "home" && <SetupPreview onPreview={showPreview} />}
+      {tab === "home" && <HomePreview onPreview={showPreview} />}
       {tab === "letter" && <LetterPreview onPreview={showPreview} />}
       {tab === "profile" && <ProfilePreview onPreview={showPreview} />}
       {showCoupleJustConnectedPopup && <CoupleConnectedPopup onClose={() => setShowCoupleJustConnectedPopup(false)} />}
