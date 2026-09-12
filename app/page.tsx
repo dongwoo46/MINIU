@@ -217,6 +217,9 @@ export default function Home() {
   const [inviteCodeInput, setInviteCodeInput] = useState("");
   const [acceptInviteError, setAcceptInviteError] = useState("");
   const [invitationExpired, setInvitationExpired] = useState(false);
+  const [invitationChecked, setInvitationChecked] = useState(false);
+  const [onboardingDecorStep, setOnboardingDecorStep] = useState<"partnerInfo" | "avatarStyle" | "speechStyle" | "form">("partnerInfo");
+  const [relationshipStartedDigits, setRelationshipStartedDigits] = useState("");
   const [preQuestions, setPreQuestions] = useState<Record<PreQuestionKey, string> & { relationshipStartedOn: string }>({
     relationshipStartedOn: "",
     likes: "",
@@ -265,8 +268,20 @@ export default function Home() {
           setInvitationExpired(Boolean(payload.data.invitation && Date.parse(payload.data.invitation.expiresAt) <= Date.now()));
         }
       })
-      .catch(() => undefined);
+      .catch(() => undefined)
+      .finally(() => setInvitationChecked(true));
   }, [me]);
+
+  useEffect(() => {
+    if (!me || me.user.onboardingStep !== "coupleLink" || !invitationChecked) {
+      return;
+    }
+    if (invitation || invitationExpired || pending) {
+      return;
+    }
+    createInvitation();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [me, invitationChecked, invitation, invitationExpired]);
 
   useEffect(() => {
     if (!me || me.couple) {
@@ -382,6 +397,12 @@ export default function Home() {
     const combined = digits.length === 8 && !getDateDigitsError(digits) ? `${digits.slice(0, 4)}-${digits.slice(4, 6)}-${digits.slice(6, 8)}` : "";
     setForm((prev) => ({ ...prev, birthDate: combined }));
   }
+  function handleRelationshipStartedChange(value: string) {
+    const digits = value.replace(/\D/g, "").slice(0, 8);
+    setRelationshipStartedDigits(digits);
+    const combined = digits.length === 8 && !getDateDigitsError(digits) ? `${digits.slice(0, 4)}-${digits.slice(4, 6)}-${digits.slice(6, 8)}` : "";
+    setPreQuestions((prev) => ({ ...prev, relationshipStartedOn: combined }));
+  }
   const allRequiredChecked = requiredConsentItems.every((item) => form[item.id]);
   const under14 = useMemo(() => {
     if (!form.birthDate) {
@@ -405,6 +426,8 @@ export default function Home() {
   const signupFieldsComplete = Boolean(form.name && form.birthDate && form.email && form.password && passwordsMatch) && !under14 && emailVerifyStatus === "verified";
   const partnerProfileStartedDateError = getDateDigitsError(partnerProfileStartedDigits);
   const partnerProfileComplete = partnerProfileStartedDigits.length === 8 && !partnerProfileStartedDateError && Boolean(partnerProfile.likes.trim() && partnerProfile.dislikes.trim() && partnerProfile.tendencies.trim() && partnerProfile.habits.trim() && partnerProfile.values.trim());
+  const relationshipStartedDateError = getDateDigitsError(relationshipStartedDigits);
+  const preQuestionsComplete = relationshipStartedDigits.length === 8 && !relationshipStartedDateError && (Object.keys(preQuestionLabels) as PreQuestionKey[]).every((key) => preQuestions[key].trim());
 
   async function requestJson<T>(path: string, body?: Record<string, unknown>, method: "POST" | "PATCH" = "POST"): Promise<T> {
     setPending(true);
@@ -1052,19 +1075,54 @@ export default function Home() {
 
   if (me.user.onboardingStep === "coupleLink") {
     return (
-      <AuthShell user={user} onLogout={logout}>
-        <CoupleLinkStep
-          invitation={invitation}
-          inviteLink={inviteLink}
-          invitationExpired={invitationExpired}
-          inviteCodeInput={inviteCodeInput}
-          acceptError={acceptInviteError}
-          pending={pending}
-          onInviteCodeChange={(value) => { setInviteCodeInput(value); setAcceptInviteError(""); }}
-          onCreateInvitation={createInvitation}
-          onAcceptInvitation={acceptInvitation}
-          onContinue={continueToPreQuestions}
-        />
+      <AuthShell hideTopBar mainClassName="login-main">
+        <form className="login-screen" onSubmit={acceptInvitation}>
+          <Image src="/login/bg-decor.png" alt="" width={404} height={404} className="login-bg-decor" priority aria-hidden />
+          <div className="login-logo-row">
+            <span className="login-logo text-display-m">MINIU</span>
+            <button type="button" className="login-logo-close" aria-label="로그아웃" onClick={logout}>
+              <Icon name="close" width={20} height={20} />
+            </button>
+          </div>
+          <div className="step-heading">
+            <h1>연인과 연결해주세요!</h1>
+            <p>아래 코드를 공유하거나 상대방 코드를 입력해주세요</p>
+          </div>
+          <div className="step-options">
+            <div className="step-option-card step-option-card--invite">
+              <Image src="/setup/code.svg" alt="" width={24} height={24} aria-hidden />
+              <span className="step-option-text">
+                <span className="step-option-title">내 초대 코드{invitationExpired && " (만료됨)"}</span>
+                <span className="step-invite-code-row">
+                  <span className="step-invite-code">{invitation && !invitationExpired ? invitation.codePreview : "생성 중..."}</span>
+                  <button type="button" className="step-invite-chip" disabled={!inviteLink || invitationExpired} onClick={() => copyInviteCode(inviteLink)}>
+                    코드복사 <Icon name="copy" width={14} height={14} />
+                  </button>
+                </span>
+                {invitationExpired && (
+                  <button type="button" className="step-photos-add" onClick={createInvitation}>코드 새로 만들기</button>
+                )}
+              </span>
+            </div>
+            <div className="step-option-card step-option-card--invite">
+              <Image src="/setup/code.svg" alt="" width={24} height={24} aria-hidden />
+              <span className="step-option-text step-option-text--gap-sm">
+                <span className="step-option-title">받은 코드로 입력</span>
+                <span className="step-invite-input-row">
+                  <input className="step-invite-input" placeholder="예 : K7M2QP9A" maxLength={8} value={inviteCodeInput} onChange={(event) => { setInviteCodeInput(event.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 8)); setAcceptInviteError(""); }} />
+                </span>
+                {acceptInviteError && <p className="signup-field-caption signup-field-caption--error text-caption-s">{acceptInviteError}</p>}
+              </span>
+            </div>
+          </div>
+          <p className="step-option-caption step-option-caption--left">대화는 말투를 학습하는 데만 사용되며,<br />학습이 끝나면 바로 삭제돼요.</p>
+          <div className="login-actions">
+            <Button type="submit" fullWidth className="login-submit" disabled={pending || !inviteCodeInput.trim()}>
+              <span className="text-label-kr">연결하기 ▶</span>
+            </Button>
+            <button className="login-signup-link text-label-kr" type="button" disabled={pending} onClick={continueToPreQuestions}>건너뛰고 사전 질문으로</button>
+          </div>
+        </form>
         {showCoupleJustConnectedPopup && <CoupleConnectedPopup onClose={() => setShowCoupleJustConnectedPopup(false)} />}
         <Toast message={toast} onDismiss={() => setToast("")} />
       </AuthShell>
@@ -1073,8 +1131,112 @@ export default function Home() {
 
   if (me.user.onboardingStep === "preQuestions" || me.onboarding.needsPreQuestions) {
     return (
-      <AuthShell user={user} onLogout={logout}>
-        <PreQuestionStep values={preQuestions} pending={pending} onChange={setPreQuestions} onSubmit={submitPreQuestions} />
+      <AuthShell hideTopBar mainClassName="login-main">
+        {onboardingDecorStep === "partnerInfo" && (
+          <div className="login-screen">
+            <Image src="/login/bg-decor.png" alt="" width={404} height={404} className="login-bg-decor" priority aria-hidden />
+            <div className="login-topbar">
+              <span className="login-logo text-display-m">MINIU</span>
+            </div>
+            <div className="step-heading">
+              <h1>연인의 정보를 알려주세요</h1>
+              <p>먼저 연인을 소개해주세요!</p>
+            </div>
+            <div className="login-fields step-fields">
+              <div className="login-field">
+                <TextField label="이름" placeholder="연인의 이름을 알려주세요" value={partnerName} onChange={(event) => setPartnerName(event.target.value)} required />
+              </div>
+              <div className="login-field">
+                <label className="text-label-kr" style={{ color: "var(--color-text-secondary)" }}>성별</label>
+                <div className="partner-info-gender">
+                  <button type="button" className={partnerGender === "male" ? "partner-info-gender-option is-selected" : "partner-info-gender-option"} onClick={() => setPartnerGender("male")}>남성</button>
+                  <button type="button" className={partnerGender === "female" ? "partner-info-gender-option is-selected" : "partner-info-gender-option"} onClick={() => setPartnerGender("female")}>여성</button>
+                </div>
+              </div>
+              <div className="login-field">
+                <TextField label="생년월일" inputMode="numeric" maxLength={10} placeholder="yyyy.mm.dd" value={formatBirthDisplay(partnerBirthDigits)} onChange={(event) => setPartnerBirthDigits(event.target.value.replace(/\D/g, "").slice(0, 8))} error={partnerBirthDateError} required />
+              </div>
+            </div>
+            <div className="login-actions">
+              <Button type="button" fullWidth disabled={!partnerName.trim() || partnerBirthDigits.length !== 8 || Boolean(partnerBirthDateError)} className="login-submit" onClick={() => setOnboardingDecorStep("avatarStyle")}>
+                <span className="text-label-kr">다음 ▶</span>
+              </Button>
+            </div>
+          </div>
+        )}
+        {onboardingDecorStep === "avatarStyle" && (
+          <div className="login-screen avatar-style-screen">
+            <div className="login-topbar">
+              <button type="button" className="login-back-button" aria-label="뒤로가기" onClick={() => setOnboardingDecorStep("partnerInfo")}>
+                <Icon name="back" width={20} height={20} />
+              </button>
+              <span className="login-logo text-display-m">MINIU</span>
+            </div>
+            <div className="avatar-style-heading">
+              <h1>연인 미니미를 꾸며주세요</h1>
+              <p>추후 언제든 다시 바꿀 수 있어요</p>
+            </div>
+            <div className="login-actions">
+              <Button type="button" fullWidth className="login-submit" onClick={() => setOnboardingDecorStep("speechStyle")}>
+                <span className="text-label-kr">다음 ▶</span>
+              </Button>
+              <button className="login-signup-link text-label-kr" type="button" onClick={() => setOnboardingDecorStep("partnerInfo")}>이전으로 돌아가기</button>
+            </div>
+          </div>
+        )}
+        {onboardingDecorStep === "speechStyle" && (
+          <div className="login-screen">
+            <div className="login-topbar">
+              <button type="button" className="login-back-button" aria-label="뒤로가기" onClick={() => setOnboardingDecorStep("avatarStyle")}>
+                <Icon name="back" width={20} height={20} />
+              </button>
+              <span className="login-logo text-display-m">MINIU</span>
+            </div>
+            <div className="step-heading">
+              <h1>연인의 말투를 알려주세요</h1>
+              <p>추후 대화창에서 다시 설정할 수 있어요</p>
+            </div>
+            <div className="login-actions">
+              <Button type="button" fullWidth className="login-submit" onClick={() => setOnboardingDecorStep("form")}>
+                <span className="text-label-kr">다음 ▶</span>
+              </Button>
+              <button className="login-signup-link text-label-kr" type="button" onClick={() => setOnboardingDecorStep("avatarStyle")}>이전으로 돌아가기</button>
+            </div>
+          </div>
+        )}
+        {onboardingDecorStep === "form" && (
+          <form className="login-screen" onSubmit={submitPreQuestions}>
+            <Image src="/login/bg-decor.png" alt="" width={404} height={404} className="login-bg-decor" priority aria-hidden />
+            <div className="login-topbar">
+              <button type="button" className="login-back-button" aria-label="뒤로가기" onClick={() => setOnboardingDecorStep("speechStyle")}>
+                <Icon name="back" width={20} height={20} />
+              </button>
+              <span className="login-logo text-display-m">MINIU</span>
+            </div>
+            <div className="step-heading">
+              <h1>내 연인은 어떤 사람일까요?</h1>
+              <p>사전 질문에 답해주시면 먼저 기억해둘게요!</p>
+            </div>
+            <div className="login-fields step-fields">
+              <div className="login-field">
+                <TextField label="사귄 날짜" inputMode="numeric" maxLength={10} placeholder="yyyy.mm.dd" value={formatBirthDisplay(relationshipStartedDigits)} onChange={(event) => handleRelationshipStartedChange(event.target.value)} error={relationshipStartedDateError} required />
+              </div>
+              {(Object.keys(preQuestionLabels) as PreQuestionKey[]).map((key) => (
+                <AutoGrowField key={key} label={preQuestionLabels[key].label} placeholder={preQuestionLabels[key].placeholder} value={preQuestions[key]} maxLength={PARTNER_PROFILE_FIELD_MAX_LENGTH} onChange={(value) => setPreQuestions({ ...preQuestions, [key]: value })} />
+              ))}
+            </div>
+            <p className="step-option-caption step-fields-caption">
+              답변은 초기 프로필 카드와 D-day 기준이 됩니다.<br />
+              연인이 원치 않을 민감한 정보나 다른 사람의 정보는 넣지 마세요.
+            </p>
+            <div className="login-actions">
+              <Button type="submit" fullWidth className="login-submit" disabled={pending || !preQuestionsComplete}>
+                <span className="text-label-kr">완료 ▶</span>
+              </Button>
+              <button className="login-signup-link text-label-kr" type="button" onClick={() => setOnboardingDecorStep("speechStyle")}>이전으로 돌아가기</button>
+            </div>
+          </form>
+        )}
         {showCoupleJustConnectedPopup && <CoupleConnectedPopup onClose={() => setShowCoupleJustConnectedPopup(false)} />}
         <Toast message={toast} onDismiss={() => setToast("")} />
       </AuthShell>
@@ -1094,72 +1256,6 @@ export default function Home() {
   );
 }
 
-function CoupleLinkStep({
-  invitation,
-  inviteLink,
-  invitationExpired,
-  inviteCodeInput,
-  acceptError,
-  pending,
-  onInviteCodeChange,
-  onCreateInvitation,
-  onAcceptInvitation,
-  onContinue,
-}: {
-  invitation: PublicInvitation | null;
-  inviteLink: string;
-  invitationExpired: boolean;
-  inviteCodeInput: string;
-  acceptError: string;
-  pending: boolean;
-  onInviteCodeChange: (value: string) => void;
-  onCreateInvitation: () => void;
-  onAcceptInvitation: (event: FormEvent<HTMLFormElement>) => void;
-  onContinue: () => void;
-}) {
-  return (
-    <section className="auth-panel">
-      <AuthHeading title="연인과 연결하기" description="초대 코드를 공유하거나 받은 코드를 입력하세요. 연결 전에도 사전 질문은 먼저 진행할 수 있어요." />
-      <Surface className="onboarding-card">
-        <span>내 초대 코드{invitationExpired && " (만료됨)"}</span>
-        <strong>{invitation && !invitationExpired ? invitation.codePreview : "아직 없음"}</strong>
-        {inviteLink && !invitationExpired && <p>{inviteLink}</p>}
-        {invitationExpired && <p>코드가 만료됐어요. 새로 만들어서 다시 공유해주세요.</p>}
-        <Button type="button" fullWidth onClick={onCreateInvitation} disabled={pending}>{invitation && !invitationExpired ? "초대 코드 다시 만들기" : "초대 코드 만들기"}</Button>
-      </Surface>
-      <form className="onboarding-card onboarding-card--form" onSubmit={onAcceptInvitation}>
-        <TextField label="받은 초대 코드" value={inviteCodeInput} onChange={(event) => onInviteCodeChange(event.target.value)} placeholder="예: K7M2QP9A" error={acceptError || undefined} />
-        <Button type="submit" fullWidth disabled={pending || !inviteCodeInput.trim()}>코드로 연결하기</Button>
-      </form>
-      <Button type="button" variant="secondary" fullWidth onClick={onContinue} disabled={pending}>건너뛰고 사전 질문으로</Button>
-    </section>
-  );
-}
-
-function PreQuestionStep({
-  values,
-  pending,
-  onChange,
-  onSubmit,
-}: {
-  values: Record<PreQuestionKey, string> & { relationshipStartedOn: string };
-  pending: boolean;
-  onChange: (values: Record<PreQuestionKey, string> & { relationshipStartedOn: string }) => void;
-  onSubmit: (event: FormEvent<HTMLFormElement>) => void;
-}) {
-  const complete = Boolean(values.relationshipStartedOn) && (Object.keys(preQuestionLabels) as PreQuestionKey[]).every((key) => values[key].trim());
-  return (
-    <form className="auth-panel" onSubmit={onSubmit}>
-      <AuthHeading title="사전 질문" description="모든 항목은 필수예요. 답변은 초기 프로필 카드와 D-day 기준이 됩니다." />
-      <Surface className="third-party-notice">연인이 원치 않을 민감한 정보(건강·종교·정치·성생활 등)나 다른 사람의 정보는 넣지 마세요.</Surface>
-      <TextField label="사귄 날짜" type="date" value={values.relationshipStartedOn} onChange={(event) => onChange({ ...values, relationshipStartedOn: event.target.value })} required />
-      {(Object.keys(preQuestionLabels) as PreQuestionKey[]).map((key) => (
-        <TextField key={key} label={preQuestionLabels[key].label} placeholder={preQuestionLabels[key].placeholder} value={values[key]} onChange={(event) => onChange({ ...values, [key]: event.target.value })} required />
-      ))}
-      <Button type="submit" fullWidth disabled={pending || !complete}>저장하고 홈으로</Button>
-    </form>
-  );
-}
 
 function AuthShell({
   children,
