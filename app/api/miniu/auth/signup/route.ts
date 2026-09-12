@@ -4,7 +4,7 @@ import { logEvent } from "@/app/lib/miniu/facts";
 import { fail, ok } from "@/app/lib/miniu/http";
 import { updateDb } from "@/app/lib/miniu/store";
 import { insertRows } from "@/app/lib/miniu/supabase";
-import { createSupabaseAuthUser, createVerificationCode, insertVerificationCode } from "@/app/lib/miniu/supabase-auth";
+import { createSupabaseAuthUser } from "@/app/lib/miniu/supabase-auth";
 import {
   ApiError,
   assertObject,
@@ -40,7 +40,15 @@ export async function POST(request: Request) {
     }
 
     const now = new Date().toISOString();
-    const userId = await createSupabaseAuthUser({ email, password, name, birthDate });
+    let userId: string;
+    try {
+      userId = await createSupabaseAuthUser({ email, password, name, birthDate });
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 400 && error.message.toLowerCase().includes("already registered")) {
+        return Response.json({ ok: false, error: { code: "CONFLICT", message: "Email is already registered.", details: null } }, { status: 409 });
+      }
+      throw error;
+    }
     await insertRows("profiles", {
       id: userId,
       email,
@@ -59,8 +67,6 @@ export async function POST(request: Request) {
       userAgent: request.headers.get("user-agent"),
     });
 
-    const verificationCode = createVerificationCode();
-    await insertVerificationCode(userId, verificationCode);
     await updateDb((db) => {
       logEvent(db, { userId, name: "signup_completed" });
     });
@@ -72,7 +78,6 @@ export async function POST(request: Request) {
 
     return ok({
       user: publicUser(user),
-      devVerificationCode: verificationCode,
     });
   } catch (error) {
     return fail(error);

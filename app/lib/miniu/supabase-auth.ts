@@ -1,6 +1,5 @@
-import { hashLookupValue } from "./crypto";
 import { ApiError } from "./validation";
-import { insertRows, patchRows, selectOne, supabaseAuthFetch } from "./supabase";
+import { supabaseAuthFetch } from "./supabase";
 
 type SupabaseAuthUser = {
   id: string;
@@ -12,16 +11,11 @@ type SupabaseAuthUserPayload = {
   user?: SupabaseAuthUser;
 };
 
-type EmailVerificationCodeRow = {
-  id: string;
-  user_id: string;
-  code_hash: string;
-  expires_at: string;
-  consumed_at: string | null;
-  created_at: string;
-};
+type SignupVerificationType = "signup" | "email" | "magiclink";
 
-const verificationCodeTtlMinutes = 30;
+function authSiteUrl(): string {
+  return (process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000").replace(/\/$/, "");
+}
 
 function authUserId(payload: unknown): string {
   if (!payload || typeof payload !== "object") {
@@ -36,18 +30,24 @@ function authUserId(payload: unknown): string {
 }
 
 export async function createSupabaseAuthUser(input: { email: string; password: string; name: string; birthDate: string }): Promise<string> {
-  const payload = await supabaseAuthFetch("/admin/users", {
-    method: "POST",
-    body: JSON.stringify({
-      email: input.email,
-      password: input.password,
-      email_confirm: true,
-      user_metadata: {
-        name: input.name,
-        birthDate: input.birthDate,
-      },
-    }),
-  });
+  const payload = await supabaseAuthFetch(
+    "/signup",
+    {
+      method: "POST",
+      body: JSON.stringify({
+        email: input.email,
+        password: input.password,
+        data: {
+          name: input.name,
+          birthDate: input.birthDate,
+        },
+        options: {
+          emailRedirectTo: `${authSiteUrl()}/auth/callback`,
+        },
+      }),
+    },
+    "anon",
+  );
   return authUserId(payload);
 }
 
@@ -63,36 +63,64 @@ export async function verifySupabasePassword(email: string, password: string): P
     );
     return authUserId(payload);
   } catch (error) {
-    if (error instanceof ApiError && (error.status === 400 || error.status === 401)) {
-      throw new ApiError(401, "UNAUTHORIZED", "Invalid email or password.");
+    if (error instanceof ApiError) {
+      const hasNotConfirmedMessage = error.message.toLowerCase().includes("confirm");
+      if (hasNotConfirmedMessage && error.status === 400) {
+        throw new ApiError(403, "FORBIDDEN", "Email verification is required.");
+      }
+      if (error.status === 400 || error.status === 401) {
+        throw new ApiError(401, "UNAUTHORIZED", "Invalid email or password.");
+      }
     }
     throw error;
   }
 }
 
-export function createVerificationCode(): string {
-  return String(Math.floor(100000 + Math.random() * 900000));
-}
-
-export async function insertVerificationCode(userId: string, code: string): Promise<void> {
-  const expiresAt = new Date(Date.now() + verificationCodeTtlMinutes * 60 * 1000).toISOString();
-  await insertRows("email_verification_codes", {
-    user_id: userId,
-    code_hash: hashLookupValue(code),
-    expires_at: expiresAt,
-  });
-}
-
-export async function findActiveVerificationCode(userId: string, code: string): Promise<EmailVerificationCodeRow | null> {
-  const now = new Date().toISOString();
-  return selectOne<EmailVerificationCodeRow>(
-    "email_verification_codes",
-    `user_id=eq.${userId}&code_hash=eq.${hashLookupValue(code)}&consumed_at=is.null&expires_at=gt.${encodeURIComponent(now)}&order=created_at.desc&limit=1&select=*`,
+export async function requestSignupVerificationEmail(email: string): Promise<void> {
+  await supabaseAuthFetch(
+    "/resend",
+    {
+      method: "POST",
+      body: JSON.stringify({
+        email,
+        type: "signup",
+        options: {
+          emailRedirectTo: `${authSiteUrl()}/auth/callback`,
+        },
+      }),
+    },
+    "anon",
   );
 }
 
-export async function consumeVerificationCode(id: string): Promise<void> {
-  await patchRows("email_verification_codes", `id=eq.${id}`, {
-    consumed_at: new Date().toISOString(),
-  });
+export async function verifySignupToken(params: {
+  token?: string;
+  tokenHash?: string;
+  type?: SignupVerificationType;
+}): Promise<string> {
+  const { token, tokenHash } = params;
+  if (!token && !tokenHash) {
+    throw new ApiError(400, "BAD_REQUEST", "Verification token is required.");
+  }
+
+  const payload = await supabaseAuthFetch(
+    "/verify",
+    {
+      method: "POST",
+      body: JSON.stringify({
+        ...(token ? { token } : {}),
+        ...(tokenHash ? { token_hash: tokenHash } : {}),
+        type: params.type ?? "signup",
+      }),
+    },
+    "anon",
+  );
+
+  if (payload && typeof payload === "object" && "user" in payload && payload.user && typeof payload.user === "object") {
+    return authUserId(payload.user);
+  }
+  if (payload && typeof payload === "object" && "id" in payload && typeof (payload as { id?: unknown }).id === "string") {
+    return (payload as { id: string }).id;
+  }
+  return authUserId(payload);
 }
