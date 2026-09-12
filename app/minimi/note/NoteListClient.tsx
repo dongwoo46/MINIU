@@ -7,6 +7,13 @@ import { Window01 } from "../components/DialogWindows";
 
 const MAX_NOTE_LENGTH = 150;
 
+const TITLE_BAR =
+  "flex items-center justify-between px-2 py-1 border-b-2 border-[#4e5968] bg-gradient-to-r from-[#5376c7] via-[#5c82db] to-[#456cb8] [&_p]:m-0 [&_p]:font-pixel [&_p]:text-xs [&_p]:text-white [&_p]:tracking-[0.3px]";
+const WINDOW_BTN =
+  "flex items-center justify-center w-4 h-4 p-0 border-2 border-white bg-[#d8dee9] cursor-pointer";
+const NAV_ITEM =
+  "flex-1 flex flex-col items-center gap-1 px-[10px] py-1.5 border-none bg-transparent no-underline cursor-pointer pointer-events-auto [&_img]:w-[46px] [&_img]:h-[46px] [&_p]:m-0 [&_p]:font-pixel [&_p]:text-base [&_p]:text-[#191f28]";
+
 // 단일 backdrop-filter로는 블러 세기 자체에 그라데이션을 줄 수 없어서
 // (mask는 알파만 가릴 뿐 blur 반경은 그대로다), 블러 세기가 다른 레이어를
 // 여러 장 겹치고 각각 다른 지점부터 mask로 드러나게 해서 위→아래로
@@ -206,63 +213,77 @@ export default function NoteListClient() {
   }
 
   return (
-    <div className="miniuHome">
-      <div className="miniuHome__softlight">
-        <img src="/minimi/bg-soft-light.png" alt="" aria-hidden="true" />
+    <div className="relative w-[390px] h-[844px] mx-auto overflow-hidden bg-gradient-to-b from-[#7cb6f6] via-[#e9f9ff] to-white text-[#191f28] font-[Arial,Helvetica,sans-serif]">
+      <div className="absolute left-0 top-0 w-[390px] h-[844px] overflow-hidden">
+        <img
+          className="absolute left-[-7px] top-[-3px] w-[404px] h-[404px] object-cover mix-blend-soft-light opacity-30 rotate-180"
+          src="/minimi/bg-soft-light.png"
+          alt=""
+          aria-hidden="true"
+        />
       </div>
 
-      <div className="miniuHome__gnb">
-        <p className="miniuHome__logo">MINIU</p>
+      <div className="absolute left-0 top-[59px] w-[390px] h-[50px] overflow-hidden">
+        <p className="absolute left-4 top-1/2 -translate-y-1/2 m-0 font-pixel text-[36px] text-white tracking-[-0.72px] leading-none whitespace-nowrap">
+          MINIU
+        </p>
 
-        <div className="miniuHome__gnbIcons">
-          <div className="miniuHome__bellIcon" aria-hidden="true">
-            <span className="miniuHome__bellRect miniuHome__bellRect--1" />
-            <span className="miniuHome__bellRect miniuHome__bellRect--2" />
-            <span className="miniuHome__bellRect miniuHome__bellRect--3" />
-            <span className="miniuHome__bellRect miniuHome__bellRect--4" />
-            <span className="miniuHome__bellRect miniuHome__bellRect--5" />
-            <span className="miniuHome__bellRect miniuHome__bellRect--6" />
-            <span className="miniuHome__bellRect miniuHome__bellRect--7" />
-            <span className="miniuHome__bellRect miniuHome__bellRect--8" />
-            <span className="miniuHome__bellRect miniuHome__bellRect--9" />
-            <span className="miniuHome__bellRect miniuHome__bellRect--10" />
-            <span className="miniuHome__bellRect miniuHome__bellRect--11" />
+        <div className="absolute left-[294px] top-[7px] flex items-center gap-2">
+          <div className="relative w-9 h-9" aria-hidden="true">
+            <span className="absolute bg-white left-[14.5px] right-[14.5px] top-[6.33px] bottom-[27.33px]" />
+            <span className="absolute bg-white left-[12.17px] right-[21.5px] top-[8.67px] bottom-[25px]" />
+            <span className="absolute bg-white left-[21.5px] right-[12.17px] top-[8.67px] bottom-[25px]" />
+            <span className="absolute bg-white left-[9.83px] right-[23.83px] top-[11px] bottom-[16.83px]" />
+            <span className="absolute bg-white left-[23.83px] right-[9.83px] top-[11px] bottom-[16.83px]" />
+            <span className="absolute bg-white left-[7.5px] right-[26.17px] top-[19.17px] bottom-[12.17px]" />
+            <span className="absolute bg-white left-[26.17px] right-[7.5px] top-[19.17px] bottom-[12.17px]" />
+            <span className="absolute bg-white left-[7.5px] right-[7.5px] top-[21.5px] bottom-[12.17px]" />
+            <span className="absolute bg-white left-[13.33px] right-[20.33px] top-[25px] bottom-[8.67px]" />
+            <span className="absolute bg-white left-[20.33px] right-[13.33px] top-[25px] bottom-[8.67px]" />
+            <span className="absolute bg-white left-[13.33px] right-[13.33px] top-[27.33px] bottom-[6.33px]" />
           </div>
 
-          <div className="miniuHome__gearIcon" aria-hidden="true">
-            <div className="miniuHome__gearCrop">
+          <div className="relative w-9 h-9" aria-hidden="true">
+            <div className="absolute left-[1.93px] top-[1.93px] w-[32.143px] h-[32.143px] overflow-hidden">
               <img
-                className="miniuHome__gearImg"
+                className="absolute left-[-83.33%] top-[-71.46%] w-[268%] h-[244.92%] max-w-none"
                 src="/minimi/gear-icon.png"
                 alt=""
               />
             </div>
-            <span className="miniuHome__gearTick miniuHome__gearTick--1" />
-            <span className="miniuHome__gearTick miniuHome__gearTick--2" />
-            <span className="miniuHome__gearTick miniuHome__gearTick--3" />
-            <span className="miniuHome__gearTick miniuHome__gearTick--4" />
-            <span className="miniuHome__gearTick miniuHome__gearTick--5" />
-            <span className="miniuHome__gearTick miniuHome__gearTick--6" />
-            <span className="miniuHome__gearTick miniuHome__gearTick--7" />
-            <span className="miniuHome__gearTick miniuHome__gearTick--8" />
+            <span className="absolute bg-white left-[13.19px] top-[16.36px] w-[1.957px] h-[3.842px]" />
+            <span className="absolute bg-white left-[21.25px] top-[16.36px] w-[1.957px] h-[3.842px]" />
+            <span className="absolute bg-white left-[16.44px] top-[13.25px] w-[3.601px] h-[1.957px]" />
+            <span className="absolute bg-white left-[19.98px] top-[14.83px] w-[1.531px] h-[1.529px]" />
+            <span className="absolute bg-white left-[19.98px] top-[20.1px] w-[1.531px] h-[1.529px]" />
+            <span className="absolute bg-white left-[14.91px] top-[20.1px] w-[1.531px] h-[1.529px]" />
+            <span className="absolute bg-white left-[14.91px] top-[14.83px] w-[1.531px] h-[1.529px]" />
+            <span className="absolute bg-white left-[16.44px] top-[21.39px] w-[3.601px] h-[1.957px]" />
           </div>
         </div>
       </div>
 
-      <div className="miniuNote__scrollArea" ref={scrollAreaRef}>
-        <div className="miniuNote__top">
-          <p className="miniuNote__count">
-            총 <span className="miniuNote__countNumber">{notes.length}</span>개
-            기록
+      {/*
+        GNB(로고+아이콘)는 화면에 고정, 아래(총 N개 기록/정렬 + 리스트)만
+        스크롤된다. 높이를 화면 맨 아래(844)까지 확장해서 리스트가 실제로
+        footer(back gradation) 뒤로 지나갈 수 있게 한다.
+      */}
+      <div
+        className="absolute left-0 top-[109px] w-[390px] h-[735px] overflow-y-auto [-webkit-overflow-scrolling:touch] [overscroll-behavior:contain]"
+        ref={scrollAreaRef}
+      >
+        <div className="flex items-center justify-between h-[21px] mt-2 mx-4 font-pixel text-sm text-[#191f28]">
+          <p className="m-0">
+            총 <span className="text-[#db2777]">{notes.length}</span>개 기록
           </p>
           <button
             type="button"
-            className="miniuNote__sort"
+            className="flex items-center gap-1 m-0 p-0 border-none bg-transparent font-pixel text-sm text-[#191f28] cursor-pointer"
             onClick={handleToggleSort}
           >
             <span>{sortOrder === "latest" ? "최신순" : "오래된순"}</span>
             <svg
-              className="miniuNote__sortIcon"
+              className="shrink-0 text-[#191f28]"
               width="16"
               height="16"
               viewBox="0 0 16 16"
@@ -343,33 +364,40 @@ export default function NoteListClient() {
           </button>
         </div>
 
-        <div className="miniuNote__list">
+        <div className="flex flex-col gap-2 mt-3 mx-4 pb-[200px]">
           {sortedNotes.map((note) => (
-            <article key={note.id} className="miniuNote__card">
-              <div className="miniuNote__cardHeader">
-                <span className="miniuNote__cardBadge">{note.badge}</span>
-                <div className="miniuNote__cardMeta">
+            <article
+              key={note.id}
+              className="flex flex-col gap-1.5 px-3 py-3.5 bg-white border-2 border-[#2b1f28] drop-shadow-[2px_2px_0px_rgba(17,17,17,0.2)]"
+            >
+              <div className="flex items-center gap-1.5 pb-[9px] border-b border-dashed border-[#d1d6db]">
+                <span className="shrink-0 px-[5px] py-px bg-[#fce7f3] border border-[#f9a8d4] font-pixel text-[10px] text-[#db2777] whitespace-nowrap">
+                  {note.badge}
+                </span>
+                <div className="flex-1 min-w-0 flex items-center justify-between font-pixel text-xs tracking-[0.3px] text-[#8b95a1]">
                   <span>{note.date}</span>
                   <button
                     type="button"
-                    className="miniuNote__cardDelete"
+                    className="m-0 p-0 border-none bg-transparent font-pixel text-xs text-[#8b95a1] cursor-pointer"
                     onClick={() => handleDelete(note.id)}
                   >
                     삭제
                   </button>
                 </div>
               </div>
-              <p className="miniuNote__cardBody">{note.body}</p>
+              <p className="m-0 font-pixel text-xs tracking-[0.3px] leading-[1.3] text-[#191f28]">
+                {note.body}
+              </p>
             </article>
           ))}
         </div>
       </div>
 
-      <div className="miniuNote__footer">
+      <div className="absolute left-0 top-[634px] w-[390px] h-[210px] pointer-events-none">
         {FOOTER_BLUR_LAYERS.map(({ blur, maskFrom, maskTo }) => (
           <div
             key={blur}
-            className="miniuNote__footerBlurLayer"
+            className="absolute inset-0"
             aria-hidden="true"
             style={{
               backdropFilter: `blur(${blur}px)`,
@@ -380,7 +408,7 @@ export default function NoteListClient() {
           />
         ))}
         <div
-          className="miniuNote__footerTint"
+          className="absolute inset-0"
           aria-hidden="true"
           style={{
             background: "rgba(255, 255, 255, 0.6)",
@@ -391,34 +419,31 @@ export default function NoteListClient() {
         />
         <ButtonPrimary
           label="기록하기"
-          className="miniuNote__writeBanner"
+          className="absolute left-4 top-[31px] w-[358px]! pointer-events-auto"
           onClick={handleOpenWrite}
           onWheel={forwardWheelToList}
         />
 
-        <nav className="miniuHome__nav" onWheel={forwardWheelToList}>
-          <Link
-            href="/minimi"
-            className="miniuHome__navItem miniuHome__navItem--inactive"
-          >
+        <nav
+          className="absolute left-0 bottom-[34px] flex items-center gap-[10px] w-[390px] px-7"
+          onWheel={forwardWheelToList}
+        >
+          <Link href="/minimi" className={`${NAV_ITEM} opacity-60`}>
             <img src="/minimi/nav-home.png" alt="" aria-hidden="true" />
             <p>홈</p>
           </Link>
-          <button type="button" className="miniuHome__navItem">
+          <button type="button" className={NAV_ITEM}>
             <img src="/minimi/nav-record.png" alt="" aria-hidden="true" />
             <p>기록</p>
           </button>
-          <button
-            type="button"
-            className="miniuHome__navItem miniuHome__navItem--inactive"
-          >
+          <button type="button" className={`${NAV_ITEM} opacity-60`}>
             <img src="/minimi/nav-profile.png" alt="" aria-hidden="true" />
             <p>프로필</p>
           </button>
         </nav>
 
-        <div className="miniuHome__homeIndicator">
-          <div className="miniuHome__homeIndicatorBar" />
+        <div className="absolute left-0 bottom-0 w-[390px] h-[34px]">
+          <div className="absolute left-1/2 bottom-2 -translate-x-1/2 w-[134px] h-[5px] rounded-[100px] bg-black" />
         </div>
       </div>
 
@@ -427,41 +452,45 @@ export default function NoteListClient() {
           <div
             className={
               mergeCandidate
-                ? "miniuHome__dim miniuNote__dim--aboveWritePopup"
-                : "miniuHome__dim"
+                ? "absolute left-0 top-0 w-[390px] h-[844px] bg-[#111] opacity-80 z-[12] cursor-pointer"
+                : "absolute left-0 top-0 w-[390px] h-[844px] bg-[#111] opacity-80 z-10 cursor-pointer"
             }
             onClick={mergeCandidate ? undefined : handleCloseWrite}
             aria-hidden="true"
           />
 
           <div
-            className="miniuNote__popupWindow"
+            className="absolute left-4 top-[259px] w-[358px] flex flex-col items-stretch bg-[#d8dee9] border-2 border-white shadow-[2px_2px_0px_0px_rgba(17,17,17,0.2)] z-[11]"
             role="dialog"
             aria-modal="true"
             aria-label="기록 작성"
           >
-            <div className="miniuHome__titleBar">
+            <div className={TITLE_BAR}>
               <p>{`miniu note.exe - [file ${String(nextFileNumber).padStart(
                 2,
                 "0"
               )}]`}</p>
-              <div className="miniuHome__titleBarControls">
-                <button type="button" className="miniuHome__windowBtn">
-                  <img src="/minimi/window-btn-min.svg" alt="최소화" />
+              <div className="flex items-center gap-0.5">
+                <button type="button" className={WINDOW_BTN}>
+                  <img
+                    className="w-[10px] h-[10px]"
+                    src="/minimi/window-btn-min.svg"
+                    alt="최소화"
+                  />
                 </button>
-                <span className="miniuHome__windowBtn">
+                <span className={WINDOW_BTN}>
                   <span
-                    className="miniuHome__windowBtnSquareIcon"
+                    className="w-2 h-2 border-[1.5px] border-[#111] box-border"
                     aria-hidden="true"
                   />
                 </span>
                 <button
                   type="button"
-                  className="miniuHome__windowBtn"
+                  className={WINDOW_BTN}
                   onClick={handleCloseWrite}
                 >
                   <img
-                    className="miniuHome__windowBtnCloseIcon"
+                    className="w-[6.124px] h-[6.124px]"
                     src="/minimi/window-btn-close.svg"
                     alt="팝업 닫기"
                   />
@@ -469,23 +498,23 @@ export default function NoteListClient() {
               </div>
             </div>
 
-            <div className="miniuNote__menuStrip">
-              <div className="miniuNote__menuStripLabels">
+            <div className="flex items-center justify-between px-2 pt-1 pb-[5px] bg-[#d8dee9] border-b border-[#4e5968] font-pixel text-[10px] text-[#191f28]">
+              <div className="flex gap-3 [&_p]:m-0">
                 <p>파일(F)</p>
                 <p>동작(A)</p>
                 <p>보기(V)</p>
                 <p>도움말(H)</p>
               </div>
-              <span className="miniuNote__counter">
+              <span className="tracking-[0.3px]">
                 {draft.length}/{MAX_NOTE_LENGTH}자
               </span>
             </div>
 
-            <div className="miniuNote__popupImgArea">
-              <div className="miniuNote__textBox">
+            <div className="p-1 bg-[#d8dee9]">
+              <div className="relative w-[338px] mx-auto h-[200px] bg-white border-2 border-[#2b1f28] shadow-[inset_0px_2px_4px_0px_rgba(0,0,0,0.05)]">
                 <textarea
                   ref={textareaRef}
-                  className="miniuNote__textarea"
+                  className="block w-full h-full m-0 pt-2 pr-4 pb-2 pl-2 border-none outline-none resize-none bg-transparent font-pixel text-xs tracking-[0.3px] leading-[1.3] text-[#191f28] overflow-y-auto box-border [scrollbar-width:none] [&::-webkit-scrollbar]:hidden [&::placeholder]:text-[#8b8b8b]"
                   maxLength={MAX_NOTE_LENGTH}
                   placeholder="내 연인을 기록해 보세요!"
                   value={draft}
@@ -494,9 +523,12 @@ export default function NoteListClient() {
                   aria-label="기록 내용 (최대 150자)"
                 />
                 {isTextOverflowing ? (
-                  <div className="miniuNote__scrollTrack" aria-hidden="true">
+                  <div
+                    className="absolute right-0 top-0 bottom-0 w-2 bg-[#b0b8c1] border-l-2 border-[#2b1f28]"
+                    aria-hidden="true"
+                  >
                     <div
-                      className="miniuNote__scrollThumb"
+                      className="absolute left-0 w-full bg-white border-t-2 border-b-2 border-[#2b1f28]"
                       style={{
                         top: `${thumbStyle.top}px`,
                         height: `${thumbStyle.height}px`,
@@ -507,10 +539,10 @@ export default function NoteListClient() {
               </div>
             </div>
 
-            <div className="miniuNote__popupUnderbar">
+            <div className="relative w-[354px] h-[65px] box-border p-2 bg-[#d8dee9]">
               <ButtonPrimary
                 label="기록하기"
-                className="miniuNote__submitBtn"
+                className="w-[338px]! mx-auto"
                 onClick={handleSubmit}
                 disabled={!canSubmit}
               />
@@ -519,7 +551,7 @@ export default function NoteListClient() {
 
           {mergeCandidate ? (
             <Window01
-              className="miniuNote__mergeDialog"
+              className="absolute left-4 top-[306px] z-[13]"
               refLabel={`Ref. ${mergeCandidate.badge}`}
               primaryLabel="병합하기"
               secondaryLabel="취소"

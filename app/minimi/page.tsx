@@ -1,4 +1,3 @@
-import "./home.css";
 import MinimiHomeClient from "./MinimiHomeClient";
 
 export const metadata = {

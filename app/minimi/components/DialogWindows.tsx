@@ -1,5 +1,7 @@
-import "./dialogWindows.css";
 import { ButtonPopup } from "./Buttons";
+
+const DIALOG_BASE =
+  "flex flex-col items-stretch w-[358px] bg-[#d8dee9] border-2 border-white shadow-[2px_2px_0px_0px_rgba(17,17,17,0.2)]";
 
 type MergeDialogProps = {
   primaryLabel?: string;
@@ -20,16 +22,18 @@ export function Window01({
 }: MergeDialogProps & { refLabel: string }) {
   return (
     <div
-      className={className ? `miniuDialog ${className}` : "miniuDialog"}
+      className={`${DIALOG_BASE}${className ? ` ${className}` : ""}`}
       role="dialog"
       aria-modal="true"
     >
-      <div className="miniuDialog__body">
-        <div className="miniuDialog__message">
+      <div className="flex flex-col items-center gap-2 px-2 py-5">
+        <div className="m-0 text-center font-pixel text-base tracking-[0.16px] leading-[1.5] text-[#191f28] [&_p]:m-0">
           <p>기존과 비슷한 기록을 발견했습니다.</p>
           <p>같은 정보로 병합할까요?</p>
         </div>
-        <p className="miniuDialog__ref">{refLabel}</p>
+        <p className="m-0 font-pixel text-base tracking-[0.16px] leading-[1.5] text-[#6b7684]">
+          {refLabel}
+        </p>
       </div>
       <ButtonPopup
         primaryLabel={primaryLabel}
@@ -51,12 +55,12 @@ export function Window02({
 }: MergeDialogProps) {
   return (
     <div
-      className={className ? `miniuDialog ${className}` : "miniuDialog"}
+      className={`${DIALOG_BASE}${className ? ` ${className}` : ""}`}
       role="dialog"
       aria-modal="true"
     >
-      <div className="miniuDialog__body">
-        <div className="miniuDialog__message">
+      <div className="flex flex-col items-center gap-2 px-2 py-5">
+        <div className="m-0 text-center font-pixel text-base tracking-[0.16px] leading-[1.5] text-[#191f28] [&_p]:m-0">
           <p>기존과 비슷한 기록을 발견했습니다.</p>
           <p>같은 정보로 병합할까요?</p>
         </div>

@@ -1,3 +1,21 @@
+@import "tailwindcss";
+
+@theme {
+  --font-pixel: "DungGeunMo", monospace;
+}
+
+/* app/minimi 입력창 깜빡이는 커서용. Tailwind arbitrary animate-[miniuBlink_...]가 참조한다 */
+@keyframes miniuBlink {
+  0%,
+  50% {
+    opacity: 1;
+  }
+  50.01%,
+  100% {
+    opacity: 0;
+  }
+}
+
 :root {
   color-scheme: dark;
   --background: #100d17;

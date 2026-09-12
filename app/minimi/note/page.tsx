@@ -1,5 +1,3 @@
-import "../home.css";
-import "./note.css";
 import NoteListClient from "./NoteListClient";
 
 export const metadata = {
