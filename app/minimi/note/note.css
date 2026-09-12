@@ -18,6 +18,8 @@
   width: 390px;
   height: 735px;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
 }
 
 /* Figma node 157:2709 "top": 총 N개 기록 + 정렬 */
@@ -62,12 +64,18 @@
   list annotation: 아래 리스트는 정렬 기준에 따라 순서가 바뀐다.
   전체 카드 높이(6장 기준)가 뷰포트보다 커질 수 있어 자체 스크롤 영역으로 둔다.
 */
+/*
+  footer(배너+네비, 210px)는 scrollArea 위에 항상 겹쳐 있어서, 마지막
+  카드가 padding-bottom 24px만으로는 footer 밑에 가려진 채로 스크롤이
+  끝나버려 끝까지 스크롤해도 마지막 기록을 볼 수 없었다. footer 높이만큼
+  여유를 더해 마지막 카드가 footer 위로 완전히 올라오게 한다.
+*/
 .miniuNote__list {
   display: flex;
   flex-direction: column;
   gap: 8px;
   margin: 12px 16px 0;
-  padding-bottom: 24px;
+  padding-bottom: 200px;
 }
 
 .miniuNote__card {
@@ -154,6 +162,17 @@
 .miniuNote__footer .miniuHome__banner,
 .miniuNote__footer .miniuHome__navItem {
   pointer-events: auto;
+}
+
+/*
+  배경 틴트/블러 전용 레이어. footer 자체에 mask-image를 걸면 배너/네비
+  같은 자식들까지 함께 위쪽이 옅어져 버려서, 배경만 담당하는 별도 레이어로
+  분리해 마스크를 여기에만 적용한다.
+*/
+.miniuNote__footerBlurLayer,
+.miniuNote__footerTint {
+  position: absolute;
+  inset: 0;
 }
 
 .miniuNote__writeBanner {

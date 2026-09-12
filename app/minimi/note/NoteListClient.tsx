@@ -5,6 +5,17 @@ import Link from "next/link";
 
 const MAX_NOTE_LENGTH = 150;
 
+// 단일 backdrop-filter로는 블러 세기 자체에 그라데이션을 줄 수 없어서
+// (mask는 알파만 가릴 뿐 blur 반경은 그대로다), 블러 세기가 다른 레이어를
+// 여러 장 겹치고 각각 다른 지점부터 mask로 드러나게 해서 위→아래로
+// 블러가 점점 강해지는 것처럼 보이게 한다.
+const FOOTER_BLUR_LAYERS = [
+  { blur: 12, maskFrom: 0, maskTo: 25 },
+  { blur: 10, maskFrom: 20, maskTo: 45 },
+  { blur: 18, maskFrom: 40, maskTo: 65 },
+  { blur: 30, maskFrom: 60, maskTo: 85 },
+];
+
 type Note = {
   id: number;
   badge: string;
@@ -212,14 +223,30 @@ export default function NoteListClient() {
         </div>
       </div>
 
-      <div
-        className="miniuNote__footer"
-        style={{
-          background: "rgba(255, 255, 255, 0.1)",
-          backdropFilter: "blur(30px)",
-          WebkitBackdropFilter: "blur(30px)",
-        }}
-      >
+      <div className="miniuNote__footer">
+        {FOOTER_BLUR_LAYERS.map(({ blur, maskFrom, maskTo }) => (
+          <div
+            key={blur}
+            className="miniuNote__footerBlurLayer"
+            aria-hidden="true"
+            style={{
+              backdropFilter: `blur(${blur}px)`,
+              WebkitBackdropFilter: `blur(${blur}px)`,
+              maskImage: `linear-gradient(to bottom, transparent ${maskFrom}%, black ${maskTo}%)`,
+              WebkitMaskImage: `linear-gradient(to bottom, transparent ${maskFrom}%, black ${maskTo}%)`,
+            }}
+          />
+        ))}
+        <div
+          className="miniuNote__footerTint"
+          aria-hidden="true"
+          style={{
+            background: "rgba(255, 255, 255, 0.6)",
+            maskImage: "linear-gradient(to bottom, transparent 0%, black 100%)",
+            WebkitMaskImage:
+              "linear-gradient(to bottom, transparent 0%, black 100%)",
+          }}
+        />
         <button
           type="button"
           className="miniuHome__banner miniuNote__writeBanner"
