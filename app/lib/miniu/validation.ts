@@ -23,7 +23,7 @@ export class ApiError extends Error {
 
 export function assertObject(value: unknown): Record<string, unknown> {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
-    throw new ApiError(400, "BAD_REQUEST", "JSON object body is required.");
+    throw new ApiError(400, "BAD_REQUEST", "요청 형식이 올바르지 않아요.");
   }
   return value as Record<string, unknown>;
 }
@@ -31,7 +31,7 @@ export function assertObject(value: unknown): Record<string, unknown> {
 export function stringField(body: Record<string, unknown>, field: string): string {
   const value = body[field];
   if (typeof value !== "string" || value.trim().length === 0) {
-    throw new ApiError(400, "VALIDATION_ERROR", `${field} is required.`, { [field]: "required" });
+    throw new ApiError(400, "VALIDATION_ERROR", "필수 값을 입력해 주세요.", { [field]: "required" });
   }
   return value.trim();
 }
@@ -42,14 +42,14 @@ export function optionalStringField(body: Record<string, unknown>, field: string
     return undefined;
   }
   if (typeof value !== "string") {
-    throw new ApiError(400, "VALIDATION_ERROR", `${field} must be a string.`, { [field]: "string" });
+    throw new ApiError(400, "VALIDATION_ERROR", "입력값 형식이 올바르지 않아요.", { [field]: "string" });
   }
   return value.trim();
 }
 
 export function booleanField(body: Record<string, unknown>, field: string): boolean {
   if (typeof body[field] !== "boolean") {
-    throw new ApiError(400, "VALIDATION_ERROR", `${field} must be boolean.`, { [field]: "boolean" });
+    throw new ApiError(400, "VALIDATION_ERROR", "체크값 형식이 올바르지 않아요.", { [field]: "boolean" });
   }
   return body[field];
 }
@@ -57,18 +57,18 @@ export function booleanField(body: Record<string, unknown>, field: string): bool
 export function stringArrayField(body: Record<string, unknown>, field: string): string[] {
   const value = body[field];
   if (!Array.isArray(value)) {
-    throw new ApiError(400, "VALIDATION_ERROR", `${field} must be a non-empty string array.`, { [field]: "array" });
+    throw new ApiError(400, "VALIDATION_ERROR", "답변을 입력해 주세요.", { [field]: "array" });
   }
   const cleaned = value.filter((item): item is string => typeof item === "string").map((item) => item.trim()).filter(Boolean);
   if (cleaned.length === 0 || cleaned.length !== value.length) {
-    throw new ApiError(400, "VALIDATION_ERROR", `${field} must contain only non-empty strings.`, { [field]: "non_empty_strings" });
+    throw new ApiError(400, "VALIDATION_ERROR", "빈 답변은 저장할 수 없어요.", { [field]: "non_empty_strings" });
   }
   return cleaned;
 }
 
 export function validateEmail(email: string): void {
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    throw new ApiError(400, "VALIDATION_ERROR", "Invalid email.", { email: "invalid" });
+    throw new ApiError(400, "VALIDATION_ERROR", "이메일 형식이 올바르지 않아요.", { email: "invalid" });
   }
 }
 
@@ -78,7 +78,7 @@ export function normalizeEmail(email: string): string {
 
 export function validatePassword(password: string): void {
   if (password.length < 8 || password.length > 16 || !/\d/.test(password) || !/[^A-Za-z0-9]/.test(password)) {
-    throw new ApiError(400, "VALIDATION_ERROR", "Password must be 8-16 chars and include a number and special character.", {
+    throw new ApiError(400, "VALIDATION_ERROR", "비밀번호는 8~16자, 숫자와 특수문자를 포함해야 해요.", {
       password: "weak",
     });
   }
@@ -86,7 +86,7 @@ export function validatePassword(password: string): void {
 
 export function validateDate(value: string, field: string): void {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value) || Number.isNaN(Date.parse(`${value}T00:00:00.000Z`))) {
-    throw new ApiError(400, "VALIDATION_ERROR", `${field} must be YYYY-MM-DD.`, { [field]: "date" });
+    throw new ApiError(400, "VALIDATION_ERROR", "날짜 형식이 올바르지 않아요.", { [field]: "date" });
   }
 }
 
@@ -99,20 +99,20 @@ export function validateAge14OrOver(birthDate: string, now = new Date()): void {
     age -= 1;
   }
   if (age < 14) {
-    throw new ApiError(400, "VALIDATION_ERROR", "Users under 14 cannot sign up.", { birthDate: "under_14" });
+    throw new ApiError(400, "VALIDATION_ERROR", "만 14세 미만은 가입할 수 없어요.", { birthDate: "under_14" });
   }
 }
 
 export function validateRecordContent(content: string): void {
   if (content.length > 150) {
-    throw new ApiError(400, "VALIDATION_ERROR", "Record content must be 150 characters or less.", { content: "max_150" });
+    throw new ApiError(400, "VALIDATION_ERROR", "기록은 150자 이하로 적어 주세요.", { content: "max_150" });
   }
 }
 
 export function validateCategory(category: string): ProfileCategory {
   const allowed: ProfileCategory[] = ["likes", "dislikes", "values", "habits", "tendencies"];
   if (!allowed.includes(category as ProfileCategory)) {
-    throw new ApiError(400, "VALIDATION_ERROR", "Invalid profile category.", { category: "invalid" });
+    throw new ApiError(400, "VALIDATION_ERROR", "카테고리가 올바르지 않아요.", { category: "invalid" });
   }
   return category as ProfileCategory;
 }

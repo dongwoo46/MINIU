@@ -1,4 +1,4 @@
-import { createAppSession, getProfileById, publicUser, setSessionCookie } from "@/app/lib/miniu/auth";
+import { createAppSession, getProfileById, publicUser, restoreProfileDeletion, setSessionCookie } from "@/app/lib/miniu/auth";
 import { logEvent } from "@/app/lib/miniu/facts";
 import { fail, ok } from "@/app/lib/miniu/http";
 import { updateDb } from "@/app/lib/miniu/store";
@@ -12,16 +12,19 @@ export async function POST(request: Request) {
     const password = stringField(body, "password");
 
     const userId = await verifySupabasePassword(email, password);
-    const user = await getProfileById(userId);
+    let user = await getProfileById(userId);
+    if (!user && (await restoreProfileDeletion(userId))) {
+      user = await getProfileById(userId);
+    }
 
     if (!user) {
-      return Response.json({ ok: false, error: { code: "UNAUTHORIZED", message: "Invalid email or password.", details: null } }, { status: 401 });
+      return Response.json({ ok: false, error: { code: "UNAUTHORIZED", message: "이메일 또는 비밀번호가 올바르지 않아요.", details: null } }, { status: 401 });
     }
     if (!user.emailVerifiedAt) {
-      return Response.json({ ok: false, error: { code: "FORBIDDEN", message: "Email verification is required.", details: null } }, { status: 403 });
+      return Response.json({ ok: false, error: { code: "FORBIDDEN", message: "이메일 인증이 필요해요.", details: null } }, { status: 403 });
     }
     if (!user.requiredConsentsAgreedAt) {
-      return Response.json({ ok: false, error: { code: "FORBIDDEN", message: "Required signup consents are required.", details: null } }, { status: 403 });
+      return Response.json({ ok: false, error: { code: "FORBIDDEN", message: "필수 동의가 필요해요.", details: null } }, { status: 403 });
     }
 
     const sessionId = await createAppSession(user.id);

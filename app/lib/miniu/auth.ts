@@ -19,6 +19,7 @@ type ProfileRow = {
   marketing_agreed_at: string | null;
   onboarding_step: "email_verification" | "couple_link" | "pre_questions" | "home";
   deleted_at: string | null;
+  purge_after: string | null;
   created_at: string;
 };
 
@@ -126,6 +127,18 @@ export async function getProfileById(id: string): Promise<User | null> {
   return profile ? toUser(profile) : null;
 }
 
+export async function restoreProfileDeletion(userId: string, now = new Date()): Promise<boolean> {
+  const profile = await selectOne<ProfileRow>("profiles", `id=eq.${userId}&deleted_at=not.is.null&select=*`);
+  if (!profile || !profile.purge_after || Date.parse(profile.purge_after) <= now.getTime()) {
+    return false;
+  }
+  await patchRows("profiles", `id=eq.${userId}`, {
+    deleted_at: null,
+    purge_after: null,
+  });
+  return true;
+}
+
 export async function getProfileByEmail(email: string): Promise<User | null> {
   const profile = await selectOne<ProfileRow>("profiles", `email=eq.${encodeURIComponent(email)}&deleted_at=is.null&select=*`);
   return profile ? toUser(profile) : null;
@@ -135,7 +148,7 @@ export async function requireUser(db?: MiniuDb): Promise<User> {
   void db;
   const sessionId = await getSessionId();
   if (!sessionId) {
-    throw new ApiError(401, "UNAUTHORIZED", "Login is required.");
+    throw new ApiError(401, "UNAUTHORIZED", "로그인이 필요해요.");
   }
 
   const now = new Date().toISOString();
@@ -144,18 +157,18 @@ export async function requireUser(db?: MiniuDb): Promise<User> {
     `token_hash=eq.${hashLookupValue(sessionId)}&revoked_at=is.null&expires_at=gt.${encodeURIComponent(now)}&select=*`,
   );
   if (!session) {
-    throw new ApiError(401, "UNAUTHORIZED", "Session is invalid or expired.");
+    throw new ApiError(401, "UNAUTHORIZED", "다시 로그인해 주세요.");
   }
 
   const user = await getProfileById(session.user_id);
   if (!user) {
-    throw new ApiError(401, "UNAUTHORIZED", "User no longer exists.");
+    throw new ApiError(401, "UNAUTHORIZED", "계정을 찾을 수 없어요.");
   }
   if (!user.emailVerifiedAt) {
-    throw new ApiError(403, "FORBIDDEN", "Email verification is required.");
+    throw new ApiError(403, "FORBIDDEN", "이메일 인증이 필요해요.");
   }
   if (!user.requiredConsentsAgreedAt) {
-    throw new ApiError(403, "FORBIDDEN", "Required signup consents are required.");
+    throw new ApiError(403, "FORBIDDEN", "필수 동의가 필요해요.");
   }
   return user;
 }
@@ -163,7 +176,7 @@ export async function requireUser(db?: MiniuDb): Promise<User> {
 export function requireCouple(db: MiniuDb, userId: string) {
   const couple = db.couples.find((item) => item.status === "connected" && item.userIds.includes(userId));
   if (!couple) {
-    throw new ApiError(403, "FORBIDDEN", "Couple connection is required.");
+    throw new ApiError(403, "FORBIDDEN", "연인과 연결해 주세요.");
   }
   return couple;
 }

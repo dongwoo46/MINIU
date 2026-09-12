@@ -11,7 +11,7 @@ export async function GET() {
   try {
     const user = await requireUser();
     if (!(await getSupabaseConnectedCouple(user.id))) {
-      throw new ApiError(403, "FORBIDDEN", "Couple connection is required.");
+      throw new ApiError(403, "FORBIDDEN", "연인과 연결해 주세요.");
     }
     const records = await selectRows<RecordRow>("records", `user_id=eq.${user.id}&deleted_at=is.null&order=created_at.desc&select=*`);
     return ok({ records: records.map(toRecordEntry) });
@@ -31,7 +31,7 @@ export async function POST(request: Request) {
     const user = await requireUser();
     const couple = await getSupabaseConnectedCouple(user.id);
     if (!couple) {
-      throw new ApiError(403, "FORBIDDEN", "Couple connection is required.");
+      throw new ApiError(403, "FORBIDDEN", "연인과 연결해 주세요.");
     }
 
     const [createdRecord] = await insertRows<RecordRow>("records", {

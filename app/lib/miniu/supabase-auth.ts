@@ -19,12 +19,12 @@ function authSiteUrl(): string {
 
 function authUserId(payload: unknown): string {
   if (!payload || typeof payload !== "object") {
-    throw new ApiError(500, "INTERNAL_ERROR", "Unexpected Supabase Auth response.");
+    throw new ApiError(500, "INTERNAL_ERROR", "인증 응답을 확인하지 못했어요.");
   }
   const data = payload as SupabaseAuthUserPayload;
   const id = data.user?.id ?? data.id;
   if (!id) {
-    throw new ApiError(500, "INTERNAL_ERROR", "Supabase Auth user id was missing.");
+    throw new ApiError(500, "INTERNAL_ERROR", "인증 정보를 확인하지 못했어요.");
   }
   return id;
 }
@@ -51,6 +51,16 @@ export async function createSupabaseAuthUser(input: { email: string; password: s
   return authUserId(payload);
 }
 
+export async function deleteSupabaseAuthUser(userId: string): Promise<void> {
+  await supabaseAuthFetch(
+    `/admin/users/${userId}`,
+    {
+      method: "DELETE",
+    },
+    "service",
+  );
+}
+
 export async function verifySupabasePassword(email: string, password: string): Promise<string> {
   try {
     const payload = await supabaseAuthFetch(
@@ -66,10 +76,10 @@ export async function verifySupabasePassword(email: string, password: string): P
     if (error instanceof ApiError) {
       const hasNotConfirmedMessage = error.message.toLowerCase().includes("confirm");
       if (hasNotConfirmedMessage && error.status === 400) {
-        throw new ApiError(403, "FORBIDDEN", "Email verification is required.");
+        throw new ApiError(403, "FORBIDDEN", "이메일 인증이 필요해요.");
       }
       if (error.status === 400 || error.status === 401) {
-        throw new ApiError(401, "UNAUTHORIZED", "Invalid email or password.");
+        throw new ApiError(401, "UNAUTHORIZED", "이메일 또는 비밀번호가 올바르지 않아요.");
       }
     }
     throw error;
@@ -100,7 +110,7 @@ export async function verifySignupToken(params: {
 }): Promise<string> {
   const { token, tokenHash } = params;
   if (!token && !tokenHash) {
-    throw new ApiError(400, "BAD_REQUEST", "Verification token is required.");
+    throw new ApiError(400, "BAD_REQUEST", "인증 토큰이 필요해요.");
   }
 
   const payload = await supabaseAuthFetch(
