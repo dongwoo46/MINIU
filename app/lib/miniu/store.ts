@@ -1,8 +1,10 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import path from "node:path";
 import type { MiniuDb } from "./types";
 
-const dataPath = path.join(process.cwd(), ".data", "miniu-db.json");
+const dataRoot = process.env.VERCEL ? tmpdir() : process.cwd();
+const dataPath = path.join(dataRoot, ".data", "miniu-db.json");
 
 const emptyDb = (): MiniuDb => ({
   users: [],
