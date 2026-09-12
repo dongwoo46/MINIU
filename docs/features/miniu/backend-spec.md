@@ -18,6 +18,8 @@ updated: 2026-09-12
 - 원칙: 브라우저는 Supabase를 직접 호출하지 않고 `/api/miniu/*` BFF만 호출한다. 서버는 Supabase Auth, Supabase REST, service role을 사용한다.
 - DB 원칙: 기본 DB schema는 이미 작성된 `supabase/migrations/001_miniu_schema.sql`을 기준으로 삼고, 구현 중 부족한 컬럼·테이블·인덱스만 새 migration으로 추가한다.
 - 에러: 사용자에게 보이는 에러 메시지는 간단한 한글 문장으로 응답한다.
+- AI 개인화 원칙: 사용자별 fine-tuning은 하지 않는다. 공통 LLM에 사용자별 DB 메모리(`profile_cards`, `records`, `letters`, `chat_messages`, `tone_profiles`)를 검색해 넣는 RAG/Memory 방식으로 개인화한다.
+- AI 추론 원칙: "좋아할지", "어떤 생각을 할지" 같은 질문은 확정 답변이 아니라 가능성, 근거, 불확실성을 함께 답한다.
 
 ## 2. 기능 상세
 
@@ -162,6 +164,18 @@ updated: 2026-09-12
 
 - 백엔드 책임: 카드 조회·아이템 제안·대표 문구 생성은 항상 최신 활성 카드만 사용한다.
 - 완료 조건: 삭제·수정된 카드는 후속 기능 컨텍스트에서 제외되거나 갱신된다.
+
+### R-24~R-27 AI 채팅 개인화 구조
+
+- 구현 원칙: 사용자별 모델 학습 또는 fine-tuning은 하지 않는다.
+- 이유: 사용자 수가 늘면 개인별 모델 관리가 불가능하고, 비용·배포·개인정보·최신성 문제가 커진다.
+- 방식: 공통 LLM 1개를 사용하고, 요청 시점에 사용자별 메모리 데이터를 검색해 프롬프트 컨텍스트로 넣는다.
+- 검색 대상: `profile_cards`, `records`, `letters`, `chat_messages`, `tone_profiles`.
+- 처리 흐름: 질문 분석 → 필요한 데이터 종류 결정 → 관련 데이터 검색 → 근거 요약 → 가능성·불확실성 판단 → 최종 답변 → 대화 저장.
+- 답변 기준: 연인의 취향·성향·반응을 추정할 때 근거가 있는 내용과 추정인 내용을 분리한다.
+- 금지: 근거 없는 단정, 민감정보 추정, 사용자가 삭제한 기록·카드·문자를 컨텍스트에 포함하는 동작.
+- 1차 검색: Supabase SQL/텍스트 검색으로 시작한다.
+- 고도화: embedding/vector search, LangChain retriever, LangGraph node 분리를 순차 도입한다.
 
 ### R-28 홈 화면 구성
 

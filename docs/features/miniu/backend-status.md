@@ -83,8 +83,9 @@
 
 ## 보류
 
-- AI 채팅 RAG Agent.
+- AI 채팅 RAG/Memory Agent.
 - LangChain, LangGraph 도입.
+- 사용자별 fine-tuning은 하지 않고 공통 LLM + 사용자별 DB 검색으로 개인화한다.
 - 말투 프로필 캡처 분석.
 - AI 채팅 최종 quota 정책.
 - 대표 문구 AI 생성.
