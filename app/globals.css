@@ -220,7 +220,7 @@ img, .minimi-avatar { image-rendering: pixelated; }
 .login-panel .page-heading p { font: normal 400 var(--text-body-m-size)/var(--text-body-m-lh) var(--font-pixel-kr); letter-spacing: var(--text-body-m-ls); color: var(--color-text-secondary); margin-top: var(--space-8); white-space: pre-line; }
 .login-fields { display: grid; gap: 14px; }
 .login-fields--cat { position: relative; }
-.login-fields-cat { position: absolute; top: -20px; right: 0; z-index: 2; pointer-events: none; }
+.login-fields-cat { position: absolute; top: -16px; right: 0; z-index: 2; pointer-events: none; }
 .login-field { position: relative; }
 .login-field .text-field label, .login-field .field-group label { font: normal 400 var(--text-label-kr-size)/var(--text-label-kr-lh) var(--font-pixel-kr); letter-spacing: var(--text-label-kr-ls); color: var(--color-text-secondary); }
 .login-field .text-field input { height: 36px; min-height: 36px; padding: 8px 10px; font: normal 400 var(--text-label-kr-size)/var(--text-label-kr-lh) var(--font-pixel-kr); letter-spacing: var(--text-label-kr-ls); border: 2px solid var(--color-border-primary); border-radius: 0; background: var(--color-common-100); box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05); caret-color: var(--color-accent-pink); }
