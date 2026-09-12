@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { truncateBubbleText } from "./lib/text";
-import { ButtonPrimary } from "./components/Buttons";
+import { ButtonPrimary } from "@/shared/ui/pixel-button";
 
 const BUBBLE_TEXT =
   '"진우야 오늘도 수고많았어! 오늘 날씨 너무 덥다. 더위 조심해~"';

@@ -2,8 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { ButtonPrimary } from "../components/Buttons";
-import { Window01 } from "../components/DialogWindows";
+import { ButtonPrimary } from "@/shared/ui/pixel-button";
+import { Window01 } from "@/shared/ui/dialog-window";
 import {
   ApiRequestError,
   type ApiMergeCandidate,

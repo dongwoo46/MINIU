@@ -1,4 +1,4 @@
-import { ButtonPopup } from "./Buttons";
+import { ButtonPopup } from "@/shared/ui/pixel-button";
 
 const DIALOG_BASE =
   "flex flex-col items-stretch w-[358px] bg-[#d8dee9] border-2 border-white shadow-[2px_2px_0px_0px_rgba(17,17,17,0.2)]";

@@ -2,7 +2,7 @@ import type { ButtonHTMLAttributes } from "react";
 type Props = ButtonHTMLAttributes<HTMLButtonElement> & { variant?: "primary" | "secondary" | "ghost" | "danger"; fullWidth?: boolean };
 export function Button({ variant = "primary", fullWidth, className = "", type = "button", ...props }: Props) {
   const variants = {
-    primary: "border-[#a68485] bg-miniu-primary shadow-[2px_2px_0_#c49c9f] hover:bg-[#eaa4aa] active:bg-[#e2949c]",
+    primary: "border-[color:var(--color-border-primary)] bg-miniu-primary shadow-[2px_2px_0_var(--color-border-primary)] hover:brightness-95 active:brightness-90",
     secondary: "border-miniu-border bg-miniu-surface shadow-miniu hover:bg-miniu-sunken",
     ghost: "border-transparent bg-transparent shadow-none hover:bg-miniu-sunken",
     danger: "border-[#a73846] bg-[#a73846] text-[#fffefa] shadow-none hover:brightness-90 active:brightness-90",
