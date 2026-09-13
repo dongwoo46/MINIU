@@ -45,6 +45,49 @@ export function Window01({
   );
 }
 
+type DeleteConfirmDialogProps = {
+  refLabel: string;
+  primaryLabel?: string;
+  secondaryLabel?: string;
+  onDelete?: () => void;
+  onCancel?: () => void;
+  className?: string;
+};
+
+// Figma node 183:51013 (window 3) — 기록 삭제 확인 다이얼로그, 참조 파일 표시 포함
+export function DeleteConfirmDialog({
+  refLabel,
+  primaryLabel = "삭제하기",
+  secondaryLabel = "취소",
+  onDelete,
+  onCancel,
+  className,
+}: DeleteConfirmDialogProps) {
+  return (
+    <div
+      className={`${DIALOG_BASE}${className ? ` ${className}` : ""}`}
+      role="dialog"
+      aria-modal="true"
+    >
+      <div className="flex flex-col items-center gap-2 px-2 py-5">
+        <div className="m-0 text-center font-pixel text-base tracking-[0.16px] leading-[1.5] text-[#191f28] [&_p]:m-0">
+          <p>기록을 삭제할까요?</p>
+          <p>기록과 연결된 프로필 카드도 삭제돼요</p>
+        </div>
+        <p className="m-0 font-pixel text-base tracking-[0.16px] leading-[1.5] text-[#6b7684]">
+          {refLabel}
+        </p>
+      </div>
+      <ButtonPopup
+        primaryLabel={primaryLabel}
+        secondaryLabel={secondaryLabel}
+        onPrimaryClick={onDelete}
+        onSecondaryClick={onCancel}
+      />
+    </div>
+  );
+}
+
 // Figma node 157:16233 (window 02) — 유사 기록 발견 다이얼로그, 참조 파일 표시 없음
 export function Window02({
   primaryLabel = "텍스트",

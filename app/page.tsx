@@ -12,6 +12,7 @@ import { LetterPreview } from "@/widgets/letter-preview";
 import { ProfilePreview } from "@/widgets/profile-preview";
 import { RecordPreview } from "@/widgets/record-preview";
 import { MobileShell } from "@/widgets/mobile-shell";
+import type { HouseData, ChatQuota, RecordEntry } from "@/shared/api/miniu";
 
 type PublicUser = {
   id: string;
@@ -124,6 +125,7 @@ const MOCK_EMAIL_CODE = "123456";
 const EMAIL_CODE_SECONDS = 300;
 const PARTNER_PROFILE_FIELD_MAX_LENGTH = 60;
 const SPEECH_PHOTO_MAX_COUNT = 4;
+const DEV_PREVIEW_INVITE_CODE = "K7M2QP9A";
 type EmailVerifyStatus = "idle" | "pending" | "verified";
 
 function formatBirthDisplay(digits: string) {
@@ -203,6 +205,7 @@ export default function Home() {
   const [partnerProfileStartedDigits, setPartnerProfileStartedDigits] = useState("");
   const [partnerProfile, setPartnerProfile] = useState({ likes: "", dislikes: "", tendencies: "", habits: "", values: "" });
   const [previewInviteCode, setPreviewInviteCode] = useState("");
+  const [previewInviteError, setPreviewInviteError] = useState("");
   const [showCoupleConnectedPopup, setShowCoupleConnectedPopup] = useState(false);
   const [showMinimiCreatedPopup, setShowMinimiCreatedPopup] = useState(false);
   const [showConsentSheet, setShowConsentSheet] = useState(false);
@@ -211,6 +214,8 @@ export default function Home() {
   const [emailVerifyError, setEmailVerifyError] = useState(false);
   const [emailVerifySeconds, setEmailVerifySeconds] = useState(EMAIL_CODE_SECONDS);
   const [me, setMe] = useState<MeData | null>(null);
+  const [devHomePreview, setDevHomePreview] = useState(false);
+  const [devTab, setDevTab] = useState<PreviewTab>("home");
   const [showCoupleJustConnectedPopup, setShowCoupleJustConnectedPopup] = useState(false);
   const [pending, setPending] = useState(false);
   const [invitation, setInvitation] = useState<PublicInvitation | null>(null);
@@ -562,6 +567,54 @@ export default function Home() {
     }
   }
 
+  if (devHomePreview && process.env.NODE_ENV !== "production") {
+    const now = new Date().toISOString();
+    const mockMiniu = (userId: string, name: string) => ({
+      id: `dev-${userId}`,
+      userId,
+      name,
+      preset: "cute",
+      hairStyle: "long",
+      hairColor: "brown",
+      skinTone: "fair",
+      faceShape: "round",
+      expression: "smile",
+      createdAt: now,
+      updatedAt: now,
+    });
+    const mockHouse: HouseData = {
+      coupleId: "dev-couple",
+      backgroundKey: "default",
+      me: { userId: "dev-me", miniu: mockMiniu("dev-me", "미니미"), equippedItems: [] },
+      partner: { userId: "dev-partner", miniu: mockMiniu("dev-partner", "연인 미니미"), equippedItems: [] },
+      locks: { canVisit: true, canCustomizeMiniu: true, canUseInventory: true, needsMiniu: false },
+    };
+    const mockQuota: ChatQuota = { limit: 20, used: 3, remaining: 17, resetsAt: now };
+    const mockRecords: RecordEntry[] = [
+      { id: "dev-r5", userId: "dev-me", content: "오늘 같이 걷다가 알았는데, 지수는 민트초코를 극도로 싫어하고 치즈케이크를 제일 좋아함.", happenedOn: "2025-09-20", analysisStatus: "complete", analysisError: null, createdAt: "2025-09-20T14:20:00.000Z" },
+      { id: "dev-r4", userId: "dev-me", content: "어제는 비 오는 날이라서 카페에서 오랜만에 만났는데, 지수는 여전히 커피보다 차를 더 좋아함.", happenedOn: "2025-09-19", analysisStatus: "complete", analysisError: null, createdAt: "2025-09-19T09:30:00.000Z" },
+      { id: "dev-r3", userId: "dev-me", content: "지난 주말에는 친구들과 바베큐를 했는데, 지수는 고기를 좋아하지만 야채는 싫어함.", happenedOn: "2025-09-18", analysisStatus: "complete", analysisError: null, createdAt: "2025-09-18T11:45:00.000Z" },
+      { id: "dev-r2", userId: "dev-me", content: "최근에 본 영화에 대해 이야기했는데, 지수는 액션 영화보다 드라마를 선호함.", happenedOn: "2025-09-17", analysisStatus: "complete", analysisError: null, createdAt: "2025-09-17T16:00:00.000Z" },
+      { id: "dev-r1", userId: "dev-me", content: "이번 여름 여행에서 만난 친구가 일본 음식을 정말 좋아했는데, 초밥은 별로였음.", happenedOn: "2025-09-15", analysisStatus: "complete", analysisError: null, createdAt: "2025-09-15T18:15:00.000Z" },
+    ];
+    const devPixelChrome = devTab === "home" || devTab === "record";
+    return (
+      <MobileShell active={devTab} onTabChange={setDevTab} hideChrome={devPixelChrome}>
+        {devTab === "home" && (
+          <HomePreview
+            onNavigate={setDevTab}
+            devMock={{ house: mockHouse, quota: mockQuota, unreadCount: 2, relationshipStartedOn: "2025-01-01" }}
+          />
+        )}
+        {devTab === "record" && (
+          <RecordPreview onNavigate={setDevTab} devMock={{ records: mockRecords, unreadCount: 2, partnerName: "연인 미니미" }} />
+        )}
+        {devTab === "letter" && <LetterPreview />}
+        {devTab === "profile" && <ProfilePreview onAddRecord={() => setDevTab("record")} />}
+      </MobileShell>
+    );
+  }
+
   if (!me) {
     return (
       <AuthShell hideTopBar={mode !== "verify"} mainClassName={mode !== "verify" ? "login-main" : undefined}>
@@ -729,7 +782,10 @@ export default function Home() {
                   </Button>
                   <button className="login-signup-link text-label-kr" type="button" onClick={() => setMode("signup")}>새 계정 만들기</button>
                   {process.env.NODE_ENV !== "production" && (
-                    <button className="auth-link" type="button" onClick={() => setMode("coupleInvite")}>연인 연결 화면 미리보기 (dev)</button>
+                    <>
+                      <button className="auth-link" type="button" onClick={() => setMode("coupleInvite")}>연인 연결 화면 미리보기 (dev)</button>
+                      <button className="auth-link" type="button" onClick={() => setDevHomePreview(true)}>로그인·커플연결·미니미생성 완료 화면 (dev)</button>
+                    </>
                   )}
                 </div>
               </form>
@@ -1007,8 +1063,8 @@ export default function Home() {
                 <span className="step-option-text">
                   <span className="step-option-title">내 초대 코드</span>
                   <span className="step-invite-code-row">
-                    <span className="step-invite-code">K7M2QP9A</span>
-                    <button type="button" className="step-invite-chip" onClick={() => copyInviteCode("K7M2QP9A")}>
+                    <span className="step-invite-code">{DEV_PREVIEW_INVITE_CODE}</span>
+                    <button type="button" className="step-invite-chip" onClick={() => copyInviteCode(DEV_PREVIEW_INVITE_CODE)}>
                       코드복사 <Icon name="copy" width={14} height={14} />
                     </button>
                   </span>
@@ -1019,13 +1075,27 @@ export default function Home() {
                 <span className="step-option-text step-option-text--gap-sm">
                   <span className="step-option-title">받은 코드로 입력</span>
                   <span className="step-invite-input-row">
-                    <input className="step-invite-input" placeholder="예 : K7M2QP9A" maxLength={8} value={previewInviteCode} onChange={(event) => setPreviewInviteCode(event.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 8))} />
+                    <input className="step-invite-input" placeholder="예 : K7M2QP9A" maxLength={8} value={previewInviteCode} onChange={(event) => { setPreviewInviteCode(event.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 8)); setPreviewInviteError(""); }} />
                   </span>
+                  {previewInviteError && <span className="step-option-caption" style={{ color: "#e0324a" }}>{previewInviteError}</span>}
                 </span>
               </div>
             </div>
             <div className="login-actions">
-              <Button type="button" fullWidth className="login-submit" onClick={() => setShowCoupleConnectedPopup(true)}>
+              <Button
+                type="button"
+                fullWidth
+                className="login-submit"
+                disabled={!previewInviteCode}
+                onClick={() => {
+                  if (previewInviteCode !== DEV_PREVIEW_INVITE_CODE) {
+                    setPreviewInviteError("코드가 일치하지 않아요. 상대방 코드를 다시 확인해주세요.");
+                    return;
+                  }
+                  setPreviewInviteError("");
+                  setShowCoupleConnectedPopup(true);
+                }}
+              >
                 <span className="text-label-kr">완료 ▶</span>
               </Button>
               <button className="login-signup-link text-label-kr" type="button" onClick={() => setMode("homeCase1")}>홈 먼저 둘러보기</button>
