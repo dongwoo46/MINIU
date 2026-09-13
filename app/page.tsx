@@ -711,12 +711,14 @@ export default function Home() {
     );
   }
 
+  const pixelChromeTabs = tab === "home" || tab === "record";
+
   return (
-    <MobileShell active={tab} onTabChange={(next) => { setTab(next); setToast(""); }}>
-      <div className="auth-user-strip"><span>{user.name}님</span><button type="button" onClick={logout}>로그아웃</button></div>
-      {!me.couple && <Surface className="onboarding-banner"><strong>연인과 연결하기</strong><span>홈은 볼 수 있지만 기록·프로필·문자·채팅은 연결 후 열려요.</span></Surface>}
-      {tab === "home" && <HomePreview />}
-      {tab === "record" && <RecordPreview />}
+    <MobileShell active={tab} onTabChange={(next) => { setTab(next); setToast(""); }} hideChrome={pixelChromeTabs}>
+      {!pixelChromeTabs && <div className="auth-user-strip"><span>{user.name}님</span><button type="button" onClick={logout}>로그아웃</button></div>}
+      {!pixelChromeTabs && !me.couple && <Surface className="onboarding-banner"><strong>연인과 연결하기</strong><span>홈은 볼 수 있지만 기록·프로필·문자·채팅은 연결 후 열려요.</span></Surface>}
+      {tab === "home" && <HomePreview onNavigate={setTab} />}
+      {tab === "record" && <RecordPreview onNavigate={setTab} />}
       {tab === "letter" && <LetterPreview />}
       {tab === "profile" && <ProfilePreview onAddRecord={() => setTab("record")} />}
       {showCoupleJustConnectedPopup && <CoupleConnectedPopup onClose={() => setShowCoupleJustConnectedPopup(false)} />}
