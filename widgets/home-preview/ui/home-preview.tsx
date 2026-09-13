@@ -129,6 +129,10 @@ export function HomePreview({ onNavigate }: { onNavigate?: (tab: PreviewTab) => 
     if (!trimmed) {
       return;
     }
+    if (quota !== null && quota.remaining <= 0) {
+      setStatus("오늘 대화를 모두 사용했어요. 내일 다시 시도해주세요.");
+      return;
+    }
     setPending(true);
     setStatus("");
     try {
@@ -184,6 +188,7 @@ export function HomePreview({ onNavigate }: { onNavigate?: (tab: PreviewTab) => 
   }
 
   const partnerName = house?.partner.miniu?.name ?? "연인";
+  const chatExhausted = quota !== null && quota.remaining <= 0;
   const dDay = calcDDay(relationshipStartedOn);
 
   return (
@@ -281,10 +286,11 @@ export function HomePreview({ onNavigate }: { onNavigate?: (tab: PreviewTab) => 
                 <div className="relative flex-1 pt-[10px] pr-4 pb-[10px] pl-[10px] bg-white border-2 border-[#2b1f28] shadow-[inset_0px_2px_4px_0px_rgba(0,0,0,0.05)]">
                   <textarea
                     ref={messageRef}
-                    className="block w-full h-5 m-0 p-0 resize-none overflow-y-auto border-none outline-none bg-transparent font-pixel text-xs tracking-[0.3px] leading-[1.4] text-[#db2777] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                    className="block w-full h-5 m-0 p-0 resize-none overflow-y-auto border-none outline-none bg-transparent font-pixel text-xs tracking-[0.3px] leading-[1.4] text-[#db2777] disabled:cursor-not-allowed disabled:opacity-50 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
                     rows={1}
                     maxLength={150}
                     value={message}
+                    disabled={chatExhausted}
                     onChange={(event) => setMessage(event.target.value)}
                     onFocus={() => setIsMessageFocused(true)}
                     onBlur={() => setIsMessageFocused(false)}
@@ -299,14 +305,16 @@ export function HomePreview({ onNavigate }: { onNavigate?: (tab: PreviewTab) => 
                 </div>
                 <button
                   type="submit"
-                  disabled={pending || !message.trim()}
+                  disabled={pending || !message.trim() || chatExhausted}
                   className="flex self-stretch shrink-0 items-center gap-0.5 px-3 py-2 border-2 border-[#2b1f28] bg-gradient-to-b from-white via-[#accef3] to-[#7cb6f6] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed [&_p]:m-0 [&_p]:font-['Silkscreen',monospace] [&_p]:font-bold [&_p]:text-xs [&_p]:text-[#191f28]"
                 >
                   <p>Send</p>
                   <p className="text-[10px]! font-normal!">▼</p>
                 </button>
               </div>
-              <p className="m-0 px-1 font-pixel text-xs text-[#333d4b]">{status || `${partnerName} is thinking of you...`}</p>
+              <p className={chatExhausted ? "m-0 px-1 font-pixel text-xs text-[#db2777]" : "m-0 px-1 font-pixel text-xs text-[#333d4b]"}>
+                {chatExhausted ? "오늘 대화를 모두 사용했어요. 내일 다시 시도해주세요." : status || `${partnerName} is thinking of you...`}
+              </p>
             </form>
           </div>
         </div>
