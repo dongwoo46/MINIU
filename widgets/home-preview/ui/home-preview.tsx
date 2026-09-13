@@ -6,20 +6,11 @@ import {
   createMiniu,
   getChatQuota,
   getHouse,
-  listInventory,
-  listItemSuggestions,
   listNotifications,
-  markNotificationRead,
-  acceptItemSuggestion,
-  rejectItemSuggestion,
   sendAffection,
   sendChatMessage,
-  updateInventoryItem,
   type ChatQuota,
   type HouseData,
-  type InventoryItem,
-  type ItemSuggestion,
-  type NotificationData,
 } from "@/shared/api/miniu";
 import { Icon } from "@/shared/ui/icon";
 
@@ -64,9 +55,7 @@ function AttributePicker({ label, options, value, onChange }: { label: string; o
 export function HomePreview({ onNavigate }: { onNavigate?: (tab: PreviewTab) => void }) {
   const [house, setHouse] = useState<HouseData | null>(null);
   const [quota, setQuota] = useState<ChatQuota | null>(null);
-  const [notifications, setNotifications] = useState<NotificationData[]>([]);
-  const [inventory, setInventory] = useState<{ items: InventoryItem[]; limit: number } | null>(null);
-  const [suggestions, setSuggestions] = useState<ItemSuggestion[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
   const [message, setMessage] = useState("");
   const [isMessageFocused, setIsMessageFocused] = useState(false);
   const [miniuName, setMiniuName] = useState("");
@@ -84,14 +73,12 @@ export function HomePreview({ onNavigate }: { onNavigate?: (tab: PreviewTab) => 
 
   useEffect(() => {
     let cancelled = false;
-    Promise.all([getHouse(), getChatQuota(), listNotifications(), listInventory(), listItemSuggestions()])
-      .then(([houseData, quotaData, notificationData, inventoryData, suggestionData]) => {
+    Promise.all([getHouse(), getChatQuota(), listNotifications()])
+      .then(([houseData, quotaData, notificationData]) => {
         if (!cancelled) {
           setHouse(houseData);
           setQuota(quotaData);
-          setNotifications(notificationData.notifications);
-          setInventory(inventoryData);
-          setSuggestions(suggestionData.suggestions);
+          setUnreadCount(notificationData.unreadCount);
         }
       })
       .catch((error) => {
@@ -144,18 +131,6 @@ export function HomePreview({ onNavigate }: { onNavigate?: (tab: PreviewTab) => 
     }
   }
 
-  async function readNotification(notification: NotificationData) {
-    if (notification.isRead) {
-      return;
-    }
-    try {
-      const data = await markNotificationRead(notification.id);
-      setNotifications((current) => current.map((item) => (item.id === notification.id ? data.notification : item)));
-    } catch (error) {
-      setStatus(error instanceof Error ? error.message : "알림을 읽음 처리하지 못했어요.");
-    }
-  }
-
   async function submitMiniu(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const name = miniuName.trim();
@@ -184,68 +159,61 @@ export function HomePreview({ onNavigate }: { onNavigate?: (tab: PreviewTab) => 
     }
   }
 
-  async function decideSuggestion(suggestion: ItemSuggestion, decision: "accept" | "reject") {
-    setPending(true);
-    setStatus("");
-    try {
-      if (decision === "accept") {
-        const data = await acceptItemSuggestion(suggestion.id);
-        setInventory((current) => ({
-          items: [data.item, ...(current?.items ?? [])],
-          limit: current?.limit ?? 10,
-        }));
-        setSuggestions((current) => current.map((item) => (item.id === suggestion.id ? data.suggestion : item)));
-        setStatus("아이템을 보관함에 넣었어요.");
-      } else {
-        const data = await rejectItemSuggestion(suggestion.id);
-        setSuggestions((current) => current.map((item) => (item.id === suggestion.id ? data.suggestion : item)));
-        setStatus("아이템 제안을 거절했어요.");
-      }
-    } catch (error) {
-      setStatus(error instanceof Error ? error.message : "아이템 제안을 처리하지 못했어요.");
-    } finally {
-      setPending(false);
-    }
-  }
-
-  async function toggleItem(item: InventoryItem) {
-    setPending(true);
-    setStatus("");
-    try {
-      const data = await updateInventoryItem(item.id, !item.equipped);
-      setInventory((current) => current ? { ...current, items: current.items.map((entry) => (entry.id === item.id ? data.item : entry)) } : current);
-      setStatus(data.item.equipped ? "아이템을 장착했어요." : "아이템을 해제했어요.");
-    } catch (error) {
-      setStatus(error instanceof Error ? error.message : "아이템을 바꾸지 못했어요.");
-    } finally {
-      setPending(false);
-    }
-  }
-
   const partnerName = house?.partner.miniu?.name ?? "연인";
-  const unreadCount = notifications.filter((item) => !item.isRead).length;
-  const pendingSuggestions = suggestions.filter((item) => item.status === "pending").slice(0, 3);
 
   return (
-    <div className="relative w-full bg-gradient-to-b from-[#7cb6f6] via-[#e9f9ff] to-white text-[#191f28]">
+    <div className="relative flex flex-col min-h-dvh w-full bg-gradient-to-b from-[#7cb6f6] via-[#e9f9ff] to-white text-[#191f28]">
       <div className="absolute inset-x-0 top-0 h-[404px] overflow-hidden pointer-events-none" aria-hidden="true">
         <img className="absolute left-[-7px] top-[-3px] w-[404px] h-[404px] object-cover mix-blend-soft-light opacity-30 rotate-180" src="/minimi/bg-soft-light.png" alt="" />
       </div>
 
       <div className="relative flex items-center justify-between h-[59px] px-4">
-        <p className="m-0 font-pixel text-[28px] text-white tracking-[-0.5px] leading-none whitespace-nowrap">MINIU</p>
+        <p className="m-0 font-pixel text-[36px] text-white tracking-[-0.72px] leading-none whitespace-nowrap">MINIU</p>
         <div className="flex items-center gap-2">
-          {unreadCount > 0 && <span className="font-pixel text-[10px] text-white bg-[#db2777] border-2 border-white px-1.5 py-0.5">{unreadCount}</span>}
-          <Icon name="heart" width={22} height={22} className="text-white" aria-hidden="true" />
+          <div className="relative w-9 h-9" aria-hidden="true">
+            <span className="absolute bg-white left-[14.5px] right-[14.5px] top-[6.33px] bottom-[27.33px]" />
+            <span className="absolute bg-white left-[12.17px] right-[21.5px] top-[8.67px] bottom-[25px]" />
+            <span className="absolute bg-white left-[21.5px] right-[12.17px] top-[8.67px] bottom-[25px]" />
+            <span className="absolute bg-white left-[9.83px] right-[23.83px] top-[11px] bottom-[16.83px]" />
+            <span className="absolute bg-white left-[23.83px] right-[9.83px] top-[11px] bottom-[16.83px]" />
+            <span className="absolute bg-white left-[7.5px] right-[26.17px] top-[19.17px] bottom-[12.17px]" />
+            <span className="absolute bg-white left-[26.17px] right-[7.5px] top-[19.17px] bottom-[12.17px]" />
+            <span className="absolute bg-white left-[7.5px] right-[7.5px] top-[21.5px] bottom-[12.17px]" />
+            <span className="absolute bg-white left-[13.33px] right-[20.33px] top-[25px] bottom-[8.67px]" />
+            <span className="absolute bg-white left-[20.33px] right-[13.33px] top-[25px] bottom-[8.67px]" />
+            <span className="absolute bg-white left-[13.33px] right-[13.33px] top-[27.33px] bottom-[6.33px]" />
+            {unreadCount > 0 && <span className="absolute -top-1 -right-1 font-pixel text-[9px] text-white bg-[#db2777] border border-white px-1">{unreadCount}</span>}
+          </div>
+          <div className="relative w-9 h-9" aria-hidden="true">
+            <div className="absolute left-[1.93px] top-[1.93px] w-[32.143px] h-[32.143px] overflow-hidden">
+              <img className="absolute left-[-83.33%] top-[-71.46%] w-[268%] h-[244.92%] max-w-none" src="/minimi/gear-icon.png" alt="" />
+            </div>
+            <span className="absolute bg-white left-[13.19px] top-[16.36px] w-[1.957px] h-[3.842px]" />
+            <span className="absolute bg-white left-[21.25px] top-[16.36px] w-[1.957px] h-[3.842px]" />
+            <span className="absolute bg-white left-[16.44px] top-[13.25px] w-[3.601px] h-[1.957px]" />
+            <span className="absolute bg-white left-[19.98px] top-[14.83px] w-[1.531px] h-[1.529px]" />
+            <span className="absolute bg-white left-[19.98px] top-[20.1px] w-[1.531px] h-[1.529px]" />
+            <span className="absolute bg-white left-[14.91px] top-[20.1px] w-[1.531px] h-[1.529px]" />
+            <span className="absolute bg-white left-[14.91px] top-[14.83px] w-[1.531px] h-[1.529px]" />
+            <span className="absolute bg-white left-[16.44px] top-[21.39px] w-[3.601px] h-[1.957px]" />
+          </div>
         </div>
       </div>
 
-      <div className="relative flex flex-col items-stretch gap-4 px-4 pb-6">
+      <div className="relative flex-1 flex flex-col items-stretch gap-4 px-4 pb-[110px]">
         <div className="flex flex-col w-full border-2 border-[#2b1f28] shadow-[2px_2px_0px_0px_rgba(17,17,17,0.2)]">
           <div className={TITLE_BAR}>
             <p>miniu_home.exe</p>
             <div className="flex items-center gap-0.5">
-              <span className={WINDOW_BTN} aria-hidden="true"><span className="w-2 h-2 border-[1.5px] border-[#111] box-border" /></span>
+              <span className={WINDOW_BTN} aria-hidden="true">
+                <img className="w-[10px] h-[10px]" src="/minimi/window-btn-min.svg" alt="" />
+              </span>
+              <span className={WINDOW_BTN} aria-hidden="true">
+                <span className="w-2 h-2 border-[1.5px] border-[#111] box-border" />
+              </span>
+              <span className={WINDOW_BTN} aria-hidden="true">
+                <img className="w-[6.124px] h-[6.124px]" src="/minimi/window-btn-close.svg" alt="" />
+              </span>
             </div>
           </div>
 
@@ -348,47 +316,9 @@ export function HomePreview({ onNavigate }: { onNavigate?: (tab: PreviewTab) => 
           </button>
         )}
 
-        {pendingSuggestions.map((item) => (
-          <div key={item.id} className="flex items-center gap-2 p-2 bg-white border-2 border-[#2b1f28] font-pixel text-xs">
-            <Icon name="heart" width={16} height={16} className="shrink-0 text-[#db2777]" aria-hidden="true" />
-            <span className="flex-1 min-w-0">{item.itemName} 아이템을 추천해요</span>
-            <button type="button" disabled={pending} className="px-2 py-1 border-2 border-[#2b1f28] bg-[#accef3]" onClick={() => decideSuggestion(item, "accept")}>받기</button>
-            <button type="button" disabled={pending} className="px-2 py-1 border-2 border-[#2b1f28] bg-white" onClick={() => decideSuggestion(item, "reject")}>거절</button>
-          </div>
-        ))}
-
-        {(inventory?.items.length ?? 0) > 0 && (
-          <div className="flex flex-col gap-1 p-2 bg-white border-2 border-[#2b1f28]">
-            <p className="m-0 font-pixel text-[10px] text-[#4e5968]">인벤토리 {inventory?.items.length}/{inventory?.limit}</p>
-            <div className="flex flex-wrap gap-1">
-              {inventory?.items.slice(0, 6).map((item) => (
-                <button key={item.id} type="button" disabled={pending} className={item.equipped ? `${ATTR_PICK} bg-[#191f28] text-white` : `${ATTR_PICK} bg-white text-[#191f28]`} onClick={() => toggleItem(item)}>
-                  {item.name}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {notifications.length > 0 && (
-          <div className="flex flex-col gap-1">
-            {notifications.slice(0, 3).map((notification) => (
-              <button
-                key={notification.id}
-                type="button"
-                className="flex items-center gap-2 p-2 bg-white border-2 border-[#2b1f28] text-left font-pixel text-xs"
-                onClick={() => readNotification(notification)}
-              >
-                <Icon name="heart" width={14} height={14} className="shrink-0 text-[#db2777]" aria-hidden="true" />
-                <span className="flex-1 min-w-0 truncate">{notification.title}</span>
-                {!notification.isRead && <span className="w-2 h-2 rounded-full bg-[#db2777] shrink-0" aria-label="새 알림" />}
-              </button>
-            ))}
-          </div>
-        )}
       </div>
 
-      <nav className="relative flex items-center gap-[10px] w-full px-7 pb-6">
+      <nav className="fixed inset-x-0 bottom-0 z-[5] mx-auto flex w-full max-w-[var(--shell-width)] items-center gap-[10px] bg-gradient-to-t from-white via-white/95 to-transparent px-7 pt-4 pb-[max(20px,env(safe-area-inset-bottom))]">
         <button type="button" className={NAV_ITEM} onClick={() => onNavigate?.("home")}>
           <img src="/minimi/nav-home.png" alt="" aria-hidden="true" />
           <p>홈</p>

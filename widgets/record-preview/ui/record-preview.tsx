@@ -169,7 +169,7 @@ export function RecordPreview({ onNavigate }: { onNavigate?: (tab: PreviewTab) =
   }
 
   return (
-    <div className="relative w-full min-h-[600px] bg-gradient-to-b from-[#7cb6f6] via-[#e9f9ff] to-white text-[#191f28]">
+    <div className="relative flex flex-col min-h-dvh w-full bg-gradient-to-b from-[#7cb6f6] via-[#e9f9ff] to-white text-[#191f28]">
       <div className="absolute inset-x-0 top-0 h-[404px] overflow-hidden pointer-events-none" aria-hidden="true">
         <img className="absolute left-[-7px] top-[-3px] w-[404px] h-[404px] object-cover mix-blend-soft-light opacity-30 rotate-180" src="/minimi/bg-soft-light.png" alt="" />
       </div>
@@ -189,7 +189,7 @@ export function RecordPreview({ onNavigate }: { onNavigate?: (tab: PreviewTab) =
 
       {loadError ? <p className="relative mx-4 mt-2 font-pixel text-xs text-[#db2777]">{loadError}</p> : null}
 
-      <div className="relative flex flex-col gap-2 mt-3 mx-4 pb-[220px]">
+      <div className="relative flex-1 flex flex-col gap-2 mt-3 mx-4 pb-[220px]">
         {sortedRecords.map((record) => (
           <article key={record.id} className="flex flex-col gap-1.5 px-3 py-3.5 bg-white border-2 border-[#2b1f28] drop-shadow-[2px_2px_0px_rgba(17,17,17,0.2)]">
             <div className="flex items-center gap-1.5 pb-[9px] border-b border-dashed border-[#d1d6db]">
@@ -211,7 +211,7 @@ export function RecordPreview({ onNavigate }: { onNavigate?: (tab: PreviewTab) =
         )}
       </div>
 
-      <div className="sticky bottom-0 left-0 right-0 pt-8 pb-6 px-4 bg-gradient-to-t from-white via-white/90 to-transparent">
+      <div className="fixed inset-x-0 bottom-0 z-[5] mx-auto w-full max-w-[var(--shell-width)] pt-8 px-4 pb-[max(20px,env(safe-area-inset-bottom))] bg-gradient-to-t from-white via-white/90 to-transparent">
         <ButtonPrimary label="기록하기" onClick={handleOpenWrite} />
 
         <nav className="flex items-center gap-[10px] w-full mt-2">
