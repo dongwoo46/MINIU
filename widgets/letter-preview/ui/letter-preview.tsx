@@ -16,7 +16,7 @@ function formatDate(value: string): string {
   }).format(new Date(value));
 }
 
-export function LetterPreview({ onPreview }: { onPreview: () => void }) {
+export function LetterPreview() {
   const [letters, setLetters] = useState<Letter[]>([]);
   const [draft, setDraft] = useState("");
   const [unreadCount, setUnreadCount] = useState(0);
@@ -63,7 +63,6 @@ export function LetterPreview({ onPreview }: { onPreview: () => void }) {
   }
 
   async function openLetter(letter: Letter) {
-    onPreview();
     if (letter.isMine || letter.isReadByMe) {
       return;
     }

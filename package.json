@@ -17,6 +17,7 @@
     "agents:sync": "node tools/sync-agents.js --write",
     "docs:check": "node tools/docs.js check",
     "docs:html": "node tools/docs.js html",
+    "seed:miniu": "node tools/seed-miniu.js",
     "test": "node --test tests/*.test.js"
   },
   "dependencies": {

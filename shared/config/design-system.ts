@@ -29,6 +29,7 @@ export const designSystem = {
 } as const;
 export const previewTabs = [
   { id: "home", label: "홈", icon: "home" },
+  { id: "record", label: "기록", icon: "note" },
   { id: "letter", label: "문자", icon: "letter" },
   { id: "profile", label: "프로필", icon: "profile" },
 ] as const;

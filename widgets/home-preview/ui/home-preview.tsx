@@ -24,11 +24,31 @@ import {
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { EmptyState } from "@/shared/ui/empty-state";
+import { Chip } from "@/shared/ui/chip";
 import { Icon } from "@/shared/ui/icon";
 import { TextField } from "@/shared/ui/text-field";
 
-export function HomePreview({ onPreview }: { onPreview: () => void }) {
-  void onPreview;
+const MINIU_PRESETS = ["basic", "cool", "cute"];
+const HAIR_STYLES = ["short", "long", "curly", "ponytail"];
+const HAIR_COLORS = ["brown", "black", "blonde", "pink"];
+const SKIN_TONES = ["warm", "fair", "tan", "deep"];
+const FACE_SHAPES = ["round", "oval", "heart", "square"];
+const EXPRESSIONS = ["smile", "wink", "calm", "giggle"];
+
+function AttributePicker({ label, options, value, onChange }: { label: string; options: string[]; value: string; onChange: (value: string) => void }) {
+  return (
+    <div className="attribute-picker">
+      <span className="attribute-picker-label">{label}</span>
+      <div className="chip-list">
+        {options.map((option) => (
+          <Chip key={option} selected={value === option} onClick={() => onChange(option)}>{option}</Chip>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export function HomePreview() {
   const [house, setHouse] = useState<HouseData | null>(null);
   const [quota, setQuota] = useState<ChatQuota | null>(null);
   const [notifications, setNotifications] = useState<NotificationData[]>([]);
@@ -36,6 +56,13 @@ export function HomePreview({ onPreview }: { onPreview: () => void }) {
   const [suggestions, setSuggestions] = useState<ItemSuggestion[]>([]);
   const [message, setMessage] = useState("");
   const [miniuName, setMiniuName] = useState("");
+  const [miniuPreset, setMiniuPreset] = useState(MINIU_PRESETS[0]);
+  const [miniuHairStyle, setMiniuHairStyle] = useState(HAIR_STYLES[0]);
+  const [miniuHairColor, setMiniuHairColor] = useState(HAIR_COLORS[0]);
+  const [miniuSkinTone, setMiniuSkinTone] = useState(SKIN_TONES[0]);
+  const [miniuFaceShape, setMiniuFaceShape] = useState(FACE_SHAPES[0]);
+  const [miniuExpression, setMiniuExpression] = useState(EXPRESSIONS[0]);
+  const [showAllNotifications, setShowAllNotifications] = useState(false);
   const [reply, setReply] = useState("");
   const [status, setStatus] = useState("");
   const [pending, setPending] = useState(false);
@@ -116,7 +143,15 @@ export function HomePreview({ onPreview }: { onPreview: () => void }) {
     setPending(true);
     setStatus("");
     try {
-      const data = await createMiniu(name);
+      const data = await createMiniu({
+        name,
+        preset: miniuPreset,
+        hairStyle: miniuHairStyle,
+        hairColor: miniuHairColor,
+        skinTone: miniuSkinTone,
+        faceShape: miniuFaceShape,
+        expression: miniuExpression,
+      });
       setHouse((current) => current ? { ...current, me: { ...current.me, miniu: data.miniu }, locks: { ...current.locks, needsMiniu: false, canCustomizeMiniu: true } } : current);
       setMiniuName("");
       setStatus("내 미니유를 만들었어요.");
@@ -194,9 +229,15 @@ export function HomePreview({ onPreview }: { onPreview: () => void }) {
       {!house && !status && <EmptyState title="집 정보를 불러오는 중이에요" description="잠시만 기다려주세요." />}
 
       {house?.locks.needsMiniu && (
-        <form className="chat-preview" onSubmit={submitMiniu}>
+        <form className="miniu-create-form" onSubmit={submitMiniu}>
           <TextField label="내 미니유 이름" placeholder="이름을 입력해 주세요" maxLength={20} value={miniuName} onChange={(event) => setMiniuName(event.target.value)} />
-          <Button type="submit" disabled={pending || !miniuName.trim()} aria-label="미니유 만들기"><Icon name="plus" /></Button>
+          <AttributePicker label="프리셋" options={MINIU_PRESETS} value={miniuPreset} onChange={setMiniuPreset} />
+          <AttributePicker label="헤어스타일" options={HAIR_STYLES} value={miniuHairStyle} onChange={setMiniuHairStyle} />
+          <AttributePicker label="머리색" options={HAIR_COLORS} value={miniuHairColor} onChange={setMiniuHairColor} />
+          <AttributePicker label="피부톤" options={SKIN_TONES} value={miniuSkinTone} onChange={setMiniuSkinTone} />
+          <AttributePicker label="얼굴형" options={FACE_SHAPES} value={miniuFaceShape} onChange={setMiniuFaceShape} />
+          <AttributePicker label="표정" options={EXPRESSIONS} value={miniuExpression} onChange={setMiniuExpression} />
+          <Button type="submit" fullWidth disabled={pending || !miniuName.trim()}>미니유 만들기</Button>
         </form>
       )}
 
@@ -221,7 +262,7 @@ export function HomePreview({ onPreview }: { onPreview: () => void }) {
         <span>{notifications.filter((item) => !item.isRead).length}개 안 읽음</span>
       </div>
       <div className="letter-list">
-        {notifications.slice(0, 3).map((notification) => (
+        {(showAllNotifications ? notifications : notifications.slice(0, 3)).map((notification) => (
           <button key={notification.id} type="button" className="letter-item surface" onClick={() => readNotification(notification)}>
             <span className="letter-stamp"><Icon name="heart" /></span>
             <span className="letter-content">
@@ -231,6 +272,11 @@ export function HomePreview({ onPreview }: { onPreview: () => void }) {
           </button>
         ))}
         {notifications.length === 0 && <EmptyState title="새 알림이 없어요" />}
+        {notifications.length > 3 && (
+          <button type="button" className="auth-link" onClick={() => setShowAllNotifications((value) => !value)}>
+            {showAllNotifications ? "접기" : `전체 보기 (${notifications.length})`}
+          </button>
+        )}
       </div>
 
       <div className="section-heading">

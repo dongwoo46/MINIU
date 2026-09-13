@@ -29,7 +29,7 @@ function categorySymbol(category: ProfileCardData["category"]): string {
   return categories.find((item) => item.id === category)?.symbol ?? "✦";
 }
 
-export function ProfilePreview({ onPreview }: { onPreview: () => void }) {
+export function ProfilePreview({ onAddRecord }: { onAddRecord: () => void }) {
   const [category, setCategory] = useState<CategoryId>("all");
   const [cards, setCards] = useState<ProfileCardData[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -112,8 +112,8 @@ export function ProfilePreview({ onPreview }: { onPreview: () => void }) {
         <div><Badge tone="pink">연인</Badge><h2>프로필 카드</h2><p>기록과 문자에서 자동으로 모여요</p></div>
         <Icon name="heart" />
       </div>
-      <div className="section-heading"><h2>연인에 대한 작은 기억</h2><span>{cards.length}개</span></div>
       {status && <p className="preview-footnote">{status}</p>}
+      <div className="section-heading"><h2>연인에 대한 작은 기억</h2><span>{cards.length}개</span></div>
       <div className="chip-list" role="group" aria-label="프로필 카테고리">
         {categories.map((item) => <Chip key={item.id} selected={item.id === category} onClick={() => setCategory(item.id)}>{item.label}</Chip>)}
       </div>
@@ -149,7 +149,7 @@ export function ProfilePreview({ onPreview }: { onPreview: () => void }) {
           <EmptyState title="아직 모아둔 기억이 없어요" description="기록이나 문자를 남기면 카드가 생겨요." />
         )}
       </div>
-      <Button variant="secondary" fullWidth onClick={onPreview}><Icon name="plus" width="18" height="18" />기록에서 추가하기</Button>
+      <Button variant="secondary" fullWidth onClick={onAddRecord}><Icon name="plus" width="18" height="18" />기록에서 추가하기</Button>
       <p className="preview-footnote">프로필 카드 조회, 수정, 삭제가 실제 API와 연결됐어요</p>
     </section>
   );

@@ -1,7 +1,6 @@
 import { createAppSession, getProfileById, publicUser, restoreProfileDeletion, setSessionCookie } from "@/app/lib/miniu/auth";
 import { logSupabaseEvent } from "@/app/lib/miniu/events";
 import { fail, ok } from "@/app/lib/miniu/http";
-import { patchRows } from "@/app/lib/miniu/supabase";
 import { assertObject, normalizeEmail, stringField } from "@/app/lib/miniu/validation";
 import { verifySupabasePassword } from "@/app/lib/miniu/supabase-auth";
 
@@ -21,14 +20,7 @@ export async function POST(request: Request) {
       return Response.json({ ok: false, error: { code: "UNAUTHORIZED", message: "이메일 또는 비밀번호가 올바르지 않아요.", details: null } }, { status: 401 });
     }
     if (!user.emailVerifiedAt) {
-      await patchRows("profiles", `id=eq.${user.id}&email_verified_at=is.null`, {
-        email_verified_at: new Date().toISOString(),
-        ...(user.onboardingStep === "emailVerification" ? { onboarding_step: "couple_link" } : {}),
-      });
-      user = await getProfileById(user.id);
-      if (!user) {
-        return Response.json({ ok: false, error: { code: "UNAUTHORIZED", message: "이메일 또는 비밀번호가 올바르지 않아요.", details: null } }, { status: 401 });
-      }
+      return Response.json({ ok: false, error: { code: "EMAIL_NOT_VERIFIED", message: "이메일 인증이 필요해요. 인증 메일을 확인해 주세요.", details: null } }, { status: 403 });
     }
     if (!user.requiredConsentsAgreedAt) {
       return Response.json({ ok: false, error: { code: "FORBIDDEN", message: "필수 동의가 필요해요.", details: null } }, { status: 403 });

@@ -103,6 +103,35 @@ export type ItemSuggestion = {
   decidedAt: string | null;
 };
 
+export type RecordEntry = {
+  id: string;
+  userId: string;
+  content: string;
+  happenedOn: string;
+  analysisStatus: "pending" | "complete" | "failedTemporary" | "failedPermanent";
+  analysisError: string | null;
+  createdAt: string;
+};
+
+export type NotificationSetting = {
+  type: string;
+  enabled: boolean;
+  updatedAt: string;
+};
+
+export type ProfileMergeCandidate = {
+  id: string;
+  userId: string;
+  sourceCardId: string;
+  targetCardId: string;
+  status: "pending" | "accepted" | "rejected";
+  reason: string | null;
+  sourceCard: ProfileCardData | null;
+  targetCard: ProfileCardData | null;
+  createdAt: string;
+  decidedAt: string | null;
+};
+
 export type AffectionActivity = {
   id: string;
   coupleId: string;
@@ -171,8 +200,52 @@ export function deleteProfileCard(id: string): Promise<{ deletedCardId: string }
   return miniuRequest(`/api/miniu/profile-cards/${id}`, { method: "DELETE" });
 }
 
-export function createMiniu(name: string): Promise<{ miniu: Miniu }> {
-  return miniuRequest("/api/miniu/miniu", { method: "POST", body: JSON.stringify({ name }) });
+export function createMiniu(input: { name: string; preset?: string; hairStyle?: string; hairColor?: string; skinTone?: string; faceShape?: string; expression?: string }): Promise<{ miniu: Miniu }> {
+  return miniuRequest("/api/miniu/miniu", { method: "POST", body: JSON.stringify(input) });
+}
+
+export function listRecords(): Promise<{ records: RecordEntry[] }> {
+  return miniuRequest("/api/miniu/records");
+}
+
+export function createRecord(input: { content: string; happenedOn: string }): Promise<{ record: RecordEntry; cardCount: number }> {
+  return miniuRequest("/api/miniu/records", { method: "POST", body: JSON.stringify(input) });
+}
+
+export function deleteRecord(id: string): Promise<{ deletedRecordId: string }> {
+  return miniuRequest(`/api/miniu/records/${id}`, { method: "DELETE" });
+}
+
+export function retryRecordAnalysis(id: string): Promise<{ record: RecordEntry; cardCount: number }> {
+  return miniuRequest(`/api/miniu/records/${id}/retry-analysis`, { method: "POST" });
+}
+
+export function listNotificationSettings(): Promise<{ settings: NotificationSetting[] }> {
+  return miniuRequest("/api/miniu/notification-settings");
+}
+
+export function updateNotificationSettings(updates: Record<string, boolean>): Promise<{ settings: NotificationSetting[] }> {
+  return miniuRequest("/api/miniu/notification-settings", { method: "PATCH", body: JSON.stringify(updates) });
+}
+
+export function unlinkCouple(): Promise<{ coupleId: string; purgeAfter: string }> {
+  return miniuRequest("/api/miniu/couple/unlink", { method: "POST", body: JSON.stringify({ confirmed: true }) });
+}
+
+export function deleteAccount(): Promise<{ deleted: boolean; purgeAfter: string }> {
+  return miniuRequest("/api/miniu/auth/delete", { method: "POST", body: JSON.stringify({ confirmed: true }) });
+}
+
+export function listMergeCandidates(): Promise<{ candidates: ProfileMergeCandidate[] }> {
+  return miniuRequest("/api/miniu/profile-cards/merge-candidates");
+}
+
+export function rejectMergeCandidate(id: string): Promise<{ candidate: ProfileMergeCandidate }> {
+  return miniuRequest(`/api/miniu/profile-cards/merge-candidates/${id}/reject`, { method: "POST" });
+}
+
+export function mergeProfileCard(sourceCardId: string, targetCardId: string): Promise<{ card: ProfileCardData }> {
+  return miniuRequest(`/api/miniu/profile-cards/${sourceCardId}/merge`, { method: "POST", body: JSON.stringify({ targetCardId }) });
 }
 
 export function listNotifications(): Promise<{ notifications: NotificationData[]; unreadCount: number }> {

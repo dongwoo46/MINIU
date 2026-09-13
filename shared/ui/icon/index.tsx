@@ -3,6 +3,7 @@ const paths = {
   home: "M3 11 12 3l9 8M5 10v11h5v-7h4v7h5V10",
   letter: "M3 5h18v14H3zM3 6l9 7 9-7",
   profile: "M8 3h8v8H8zM4 21v-6h16v6",
+  note: "M5 3h14v16l-4-3-3 3-3-3-4 3zM8 8h8M8 12h5",
   plus: "M12 4v16M4 12h16",
   back: "M15 5 8 12l7 7",
   arrow: "M4 12h16M14 6l6 6-6 6",
