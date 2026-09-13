@@ -13,6 +13,7 @@ import {
   type HouseData,
 } from "@/shared/api/miniu";
 import { Icon } from "@/shared/ui/icon";
+import { ButtonPrimary } from "@/shared/ui/pixel-button";
 
 const MINIU_PRESETS = ["basic", "cool", "cute"];
 const HAIR_STYLES = ["short", "long", "curly", "ponytail"];
@@ -131,8 +132,7 @@ export function HomePreview({ onNavigate }: { onNavigate?: (tab: PreviewTab) => 
     }
   }
 
-  async function submitMiniu(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  async function submitMiniu() {
     const name = miniuName.trim();
     if (!name) {
       return;
@@ -200,7 +200,7 @@ export function HomePreview({ onNavigate }: { onNavigate?: (tab: PreviewTab) => 
         </div>
       </div>
 
-      <div className="relative flex-1 flex flex-col items-stretch gap-4 px-4 pb-[110px]">
+      <div className="relative flex-1 flex flex-col items-stretch gap-4 px-4 pb-[110px] mt-[26px]">
         <div className="flex flex-col w-full border-2 border-[#2b1f28] shadow-[2px_2px_0px_0px_rgba(17,17,17,0.2)]">
           <div className={TITLE_BAR}>
             <p>miniu_home.exe</p>
@@ -286,7 +286,7 @@ export function HomePreview({ onNavigate }: { onNavigate?: (tab: PreviewTab) => 
         </div>
 
         {house?.locks.needsMiniu && (
-          <form className="flex flex-col gap-2 p-2 bg-white border-2 border-[#2b1f28]" onSubmit={submitMiniu}>
+          <div className="flex flex-col gap-2 p-2 bg-white border-2 border-[#2b1f28]">
             <p className="m-0 font-pixel text-xs text-[#191f28]">내 미니유를 만들어주세요</p>
             <input
               className="w-full box-border px-2 py-1.5 border-2 border-[#2b1f28] font-pixel text-xs"
@@ -301,19 +301,12 @@ export function HomePreview({ onNavigate }: { onNavigate?: (tab: PreviewTab) => 
             <AttributePicker label="피부톤" options={SKIN_TONES} value={miniuSkinTone} onChange={setMiniuSkinTone} />
             <AttributePicker label="얼굴형" options={FACE_SHAPES} value={miniuFaceShape} onChange={setMiniuFaceShape} />
             <AttributePicker label="표정" options={EXPRESSIONS} value={miniuExpression} onChange={setMiniuExpression} />
-            <button type="submit" disabled={pending || !miniuName.trim()} className="w-full py-2 border-2 border-[#2b1f28] bg-gradient-to-b from-white via-[#f296c1] to-[#db2777] font-pixel text-xs disabled:opacity-50">미니유 만들기</button>
-          </form>
+            <ButtonPrimary label="미니유 만들기" disabled={pending || !miniuName.trim()} onClick={submitMiniu} />
+          </div>
         )}
 
         {house?.locks.canVisit && (
-          <button
-            type="button"
-            className="w-full h-[42px] border-2 border-[#2b1f28] bg-gradient-to-b from-white via-[#f296c1] to-[#db2777] font-pixel text-xs tracking-[0.3px] cursor-pointer disabled:opacity-50"
-            disabled={pending}
-            onClick={() => setShowHousePopup(true)}
-          >
-            {partnerName} 집에 놀러가기 ▶
-          </button>
+          <ButtonPrimary label={`${partnerName} 집에 놀러가기`} disabled={pending} onClick={() => setShowHousePopup(true)} />
         )}
 
       </div>
