@@ -432,9 +432,14 @@ export function HomePreview({ onNavigate }: { onNavigate?: (tab: PreviewTab) => 
             <div className={TITLE_BAR}>
               <p>my home.exe - [wellcome!]</p>
               <div className="flex items-center gap-0.5">
-                <span className={WINDOW_BTN} aria-hidden="true"><span className="w-2 h-2 border-[1.5px] border-[#111] box-border" /></span>
+                <span className={WINDOW_BTN} aria-hidden="true">
+                  <img className="w-[10px] h-[10px]" src="/minimi/window-btn-min.svg" alt="" />
+                </span>
+                <span className={WINDOW_BTN} aria-hidden="true">
+                  <span className="w-2 h-2 border-[1.5px] border-[#111] box-border" />
+                </span>
                 <button type="button" className={WINDOW_BTN} onClick={() => setShowHousePopup(false)} aria-label="팝업 닫기">
-                  <Icon name="close" width={10} height={10} />
+                  <img className="w-[6.124px] h-[6.124px]" src="/minimi/window-btn-close.svg" alt="" />
                 </button>
               </div>
             </div>
@@ -452,9 +457,9 @@ export function HomePreview({ onNavigate }: { onNavigate?: (tab: PreviewTab) => 
               <div className="relative w-full h-[236px] overflow-hidden border-2 border-[#191f28]">
                 <img className="w-full h-full object-cover object-top" src="/minimi/room-bg.png" alt={`${partnerName}의 방`} />
                 {affectionBubble && (
-                  <div className="absolute left-1/2 top-[7.4px] -translate-x-1/2 max-w-[300px] z-[1] bg-white border-2 border-[#2b1f28] drop-shadow-[2px_2px_0px_#2b1f28] px-2 py-1.5">
-                    <p className="m-0 font-pixel text-sm tracking-[0.196px] text-[#191f28] text-center">{affectionBubble}</p>
-                    <span className="absolute left-1/2 -translate-x-1/2 -bottom-[9px] text-[10px] tracking-[0.3px] text-[#2b1f28]" aria-hidden="true">▼</span>
+                  <div className="absolute left-1/2 top-[7.4px] -translate-x-1/2 max-w-[300px] z-[1] flex flex-col items-end px-2 py-1.5 bg-white border-2 border-[#2b1f28] drop-shadow-[2px_2px_0px_#2b1f28]">
+                    <p className="m-0 w-fit max-w-full font-pixel text-sm tracking-[0.196px] text-[#191f28] text-center break-words">{affectionBubble}</p>
+                    <p className="m-0 text-[10px]!" aria-hidden="true">▼</p>
                   </div>
                 )}
                 <div className="absolute left-1/2 bottom-[17.2px] -translate-x-1/2 w-[98px] h-[137px]">
