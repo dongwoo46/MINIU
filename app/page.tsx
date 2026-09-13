@@ -12,7 +12,7 @@ import { LetterPreview } from "@/widgets/letter-preview";
 import { ProfilePreview } from "@/widgets/profile-preview";
 import { RecordPreview } from "@/widgets/record-preview";
 import { MobileShell } from "@/widgets/mobile-shell";
-import type { HouseData, ChatQuota, RecordEntry } from "@/shared/api/miniu";
+import type { HouseData, ChatQuota, RecordEntry, ProfileCardData } from "@/shared/api/miniu";
 
 type PublicUser = {
   id: string;
@@ -126,6 +126,33 @@ const EMAIL_CODE_SECONDS = 300;
 const PARTNER_PROFILE_FIELD_MAX_LENGTH = 60;
 const SPEECH_PHOTO_MAX_COUNT = 4;
 const DEV_PREVIEW_INVITE_CODE = "K7M2QP9A";
+
+const INITIAL_MOCK_RECORDS: RecordEntry[] = [
+  { id: "dev-r5", userId: "dev-me", content: "오늘 같이 걷다가 알았는데, 지수는 민트초코를 극도로 싫어하고 치즈케이크를 제일 좋아함.", happenedOn: "2025-09-20", analysisStatus: "complete", analysisError: null, createdAt: "2025-09-20T14:20:00.000Z" },
+  { id: "dev-r4", userId: "dev-me", content: "어제는 비 오는 날이라서 카페에서 오랜만에 만났는데, 지수는 여전히 커피보다 차를 더 좋아함.", happenedOn: "2025-09-19", analysisStatus: "complete", analysisError: null, createdAt: "2025-09-19T09:30:00.000Z" },
+  { id: "dev-r3", userId: "dev-me", content: "지난 주말에는 친구들과 바베큐를 했는데, 지수는 고기를 좋아하지만 야채는 싫어함.", happenedOn: "2025-09-18", analysisStatus: "complete", analysisError: null, createdAt: "2025-09-18T11:45:00.000Z" },
+  { id: "dev-r2", userId: "dev-me", content: "최근에 본 영화에 대해 이야기했는데, 지수는 액션 영화보다 드라마를 선호함.", happenedOn: "2025-09-17", analysisStatus: "complete", analysisError: null, createdAt: "2025-09-17T16:00:00.000Z" },
+  { id: "dev-r1", userId: "dev-me", content: "이번 여름 여행에서 만난 친구가 일본 음식을 정말 좋아했는데, 초밥은 별로였음.", happenedOn: "2025-09-15", analysisStatus: "complete", analysisError: null, createdAt: "2025-09-15T18:15:00.000Z" },
+];
+
+const INITIAL_MOCK_PROFILE_CARDS: ProfileCardData[] = [
+  { id: "dev-p1", userId: "dev-me", category: "likes", content: "치즈케이크와 아이스 아메리카노", sources: [{ type: "record", id: "dev-r5" }], mergeCandidateOf: null, userEdited: false, createdAt: "2025-09-15T18:15:00.000Z", updatedAt: "2025-09-20T14:20:00.000Z" },
+  { id: "dev-p2", userId: "dev-me", category: "likes", content: "아침에 커피 들고 산책하기", sources: [{ type: "record", id: "dev-r3" }, { type: "record", id: "dev-r4" }], mergeCandidateOf: null, userEdited: false, createdAt: "2025-09-17T16:00:00.000Z", updatedAt: "2025-09-18T11:45:00.000Z" },
+  { id: "dev-p3", userId: "dev-me", category: "dislikes", content: "민트초코", sources: [{ type: "record", id: "dev-r5" }], mergeCandidateOf: null, userEdited: false, createdAt: "2025-09-20T14:20:00.000Z", updatedAt: "2025-09-20T14:20:00.000Z" },
+];
+
+// dev 미리보기 전용 간이 분류(실제 백엔드의 AI 분석을 흉내만 냄, 키워드 매칭이라 정확하지 않음).
+// 기록 하나가 여러 카테고리에 걸쳐 있으면 카테고리별로 카드를 하나씩 만든다.
+function classifyMockRecordCategories(content: string): ProfileCardData["category"][] {
+  const categories: ProfileCardData["category"][] = [];
+  if (/싫어|별로|극도로/.test(content)) categories.push("dislikes");
+  if (/좋아|선호/.test(content)) categories.push("likes");
+  if (/습관|매일|항상|자주/.test(content)) categories.push("habits");
+  if (/가치관|중요하게|소중히/.test(content)) categories.push("values");
+  if (/성향|성격|낯가림/.test(content)) categories.push("tendencies");
+  return categories.length ? categories : ["likes"];
+}
+
 type EmailVerifyStatus = "idle" | "pending" | "verified";
 
 function formatBirthDisplay(digits: string) {
@@ -216,6 +243,8 @@ export default function Home() {
   const [me, setMe] = useState<MeData | null>(null);
   const [devHomePreview, setDevHomePreview] = useState(false);
   const [devTab, setDevTab] = useState<PreviewTab>("home");
+  const [mockRecords, setMockRecords] = useState<RecordEntry[]>(INITIAL_MOCK_RECORDS);
+  const [mockProfileCards, setMockProfileCards] = useState<ProfileCardData[]>(INITIAL_MOCK_PROFILE_CARDS);
   const [showCoupleJustConnectedPopup, setShowCoupleJustConnectedPopup] = useState(false);
   const [pending, setPending] = useState(false);
   const [invitation, setInvitation] = useState<PublicInvitation | null>(null);
@@ -586,18 +615,36 @@ export default function Home() {
       coupleId: "dev-couple",
       backgroundKey: "default",
       me: { userId: "dev-me", miniu: mockMiniu("dev-me", "미니미"), equippedItems: [] },
-      partner: { userId: "dev-partner", miniu: mockMiniu("dev-partner", "연인 미니미"), equippedItems: [] },
+      partner: { userId: "dev-partner", miniu: mockMiniu("dev-partner", "지수 미니미"), equippedItems: [] },
       locks: { canVisit: true, canCustomizeMiniu: true, canUseInventory: true, needsMiniu: false },
     };
     const mockQuota: ChatQuota = { limit: 20, used: 3, remaining: 17, resetsAt: now };
-    const mockRecords: RecordEntry[] = [
-      { id: "dev-r5", userId: "dev-me", content: "오늘 같이 걷다가 알았는데, 지수는 민트초코를 극도로 싫어하고 치즈케이크를 제일 좋아함.", happenedOn: "2025-09-20", analysisStatus: "complete", analysisError: null, createdAt: "2025-09-20T14:20:00.000Z" },
-      { id: "dev-r4", userId: "dev-me", content: "어제는 비 오는 날이라서 카페에서 오랜만에 만났는데, 지수는 여전히 커피보다 차를 더 좋아함.", happenedOn: "2025-09-19", analysisStatus: "complete", analysisError: null, createdAt: "2025-09-19T09:30:00.000Z" },
-      { id: "dev-r3", userId: "dev-me", content: "지난 주말에는 친구들과 바베큐를 했는데, 지수는 고기를 좋아하지만 야채는 싫어함.", happenedOn: "2025-09-18", analysisStatus: "complete", analysisError: null, createdAt: "2025-09-18T11:45:00.000Z" },
-      { id: "dev-r2", userId: "dev-me", content: "최근에 본 영화에 대해 이야기했는데, 지수는 액션 영화보다 드라마를 선호함.", happenedOn: "2025-09-17", analysisStatus: "complete", analysisError: null, createdAt: "2025-09-17T16:00:00.000Z" },
-      { id: "dev-r1", userId: "dev-me", content: "이번 여름 여행에서 만난 친구가 일본 음식을 정말 좋아했는데, 초밥은 별로였음.", happenedOn: "2025-09-15", analysisStatus: "complete", analysisError: null, createdAt: "2025-09-15T18:15:00.000Z" },
-    ];
-    const devPixelChrome = devTab === "home" || devTab === "record";
+    const devPixelChrome = devTab === "home" || devTab === "record" || devTab === "profile";
+
+    function handleMockRecordCreate(record: RecordEntry) {
+      setMockRecords((prev) => [record, ...prev]);
+      const categories = classifyMockRecordCategories(record.content);
+      setMockProfileCards((prev) => [
+        ...categories.map((category) => ({
+          id: `dev-p-${record.id}-${category}`,
+          userId: "dev-me",
+          category,
+          content: record.content,
+          sources: [{ type: "record", id: record.id }],
+          mergeCandidateOf: null,
+          userEdited: false,
+          createdAt: record.createdAt,
+          updatedAt: record.createdAt,
+        })),
+        ...prev,
+      ]);
+    }
+
+    function handleMockRecordDelete(id: string) {
+      setMockRecords((prev) => prev.filter((record) => record.id !== id));
+      setMockProfileCards((prev) => prev.filter((card) => !(card.sources.length === 1 && card.sources[0].type === "record" && card.sources[0].id === id)));
+    }
+
     return (
       <MobileShell active={devTab} onTabChange={setDevTab} hideChrome={devPixelChrome}>
         {devTab === "home" && (
@@ -607,10 +654,18 @@ export default function Home() {
           />
         )}
         {devTab === "record" && (
-          <RecordPreview onNavigate={setDevTab} devMock={{ records: mockRecords, unreadCount: 2, partnerName: "연인 미니미" }} />
+          <RecordPreview
+            onNavigate={setDevTab}
+            devMock={{ records: mockRecords, unreadCount: 2, partnerName: "지수 미니미", onCreateRecord: handleMockRecordCreate, onDeleteRecord: handleMockRecordDelete }}
+          />
         )}
         {devTab === "letter" && <LetterPreview />}
-        {devTab === "profile" && <ProfilePreview onAddRecord={() => setDevTab("record")} />}
+        {devTab === "profile" && (
+          <ProfilePreview
+            onNavigate={setDevTab}
+            devMock={{ partnerName: "지수 미니미", dDay: 324, summary: "놀러다니는 것을 좋아하고, 잘 챙겨주는 연인이에요", unreadCount: 2, cards: mockProfileCards, records: mockRecords }}
+          />
+        )}
       </MobileShell>
     );
   }
@@ -781,12 +836,6 @@ export default function Home() {
                     <span className="text-label-kr">로그인 ▶</span>
                   </Button>
                   <button className="login-signup-link text-label-kr" type="button" onClick={() => setMode("signup")}>새 계정 만들기</button>
-                  {process.env.NODE_ENV !== "production" && (
-                    <>
-                      <button className="auth-link" type="button" onClick={() => setMode("coupleInvite")}>연인 연결 화면 미리보기 (dev)</button>
-                      <button className="auth-link" type="button" onClick={() => setDevHomePreview(true)}>로그인·커플연결·미니미생성 완료 화면 (dev)</button>
-                    </>
-                  )}
                 </div>
               </form>
             </div>
@@ -819,7 +868,7 @@ export default function Home() {
               </div>
             </div>
             <div className="login-actions">
-              <Button type="button" fullWidth disabled={Boolean(partnerBirthDateError)} className="login-submit" onClick={() => setMode("avatarStyle")}>
+              <Button type="button" fullWidth disabled={!partnerName.trim() || !partnerGender || partnerBirthDigits.length !== 8 || Boolean(partnerBirthDateError)} className="login-submit" onClick={() => setMode("avatarStyle")}>
                 <span className="text-label-kr">다음 ▶</span>
               </Button>
               <button className="login-signup-link text-label-kr" type="button" onClick={() => setMode("login")}>로그인으로 돌아가기</button>
@@ -1007,7 +1056,11 @@ export default function Home() {
               <h1>내 연인은 어떤 사람일까요?</h1>
               <p>사전 질문에 답해주시면 먼저 기억해둘게요!</p>
             </div>
-            <div className="login-fields step-fields">
+            <p className="step-option-caption step-fields-caption--top">
+              *자세히 답할수록 연인과 더 닮아가요.<br />
+              민감한 정보나 다른 사람의 개인정보는 입력하지 말아 주세요.
+            </p>
+            <div className="login-fields step-fields--tight">
               <div className="login-field">
                 <TextField label="사귄 날짜" inputMode="numeric" maxLength={10} placeholder="yyyy.mm.dd" value={formatBirthDisplay(partnerProfileStartedDigits)} onChange={(event) => setPartnerProfileStartedDigits(event.target.value.replace(/\D/g, "").slice(0, 8))} error={partnerProfileStartedDateError} />
               </div>
@@ -1017,10 +1070,6 @@ export default function Home() {
               <AutoGrowField label="자주 하는 습관" placeholder="예: 자기 전에 음악을 듣는다" value={partnerProfile.habits} maxLength={PARTNER_PROFILE_FIELD_MAX_LENGTH} onChange={(value) => setPartnerProfile({ ...partnerProfile, habits: value })} />
               <AutoGrowField label="가치관" placeholder="예: 약속을 지키는 것" value={partnerProfile.values} maxLength={PARTNER_PROFILE_FIELD_MAX_LENGTH} onChange={(value) => setPartnerProfile({ ...partnerProfile, values: value })} />
             </div>
-            <p className="step-option-caption step-fields-caption">
-              답변은 초기 프로필 카드와 D+day 기준이 됩니다.<br />
-              연인이 원치 않을 민감한 정보나 다른 사람의 정보는 넣지 마세요.
-            </p>
             <div className="login-actions">
               <Button type="button" fullWidth className="login-submit" disabled={!partnerProfileComplete} onClick={() => setShowMinimiCreatedPopup(true)}>
                 <span className="text-label-kr">다음 ▶</span>
@@ -1226,7 +1275,7 @@ export default function Home() {
               </div>
             </div>
             <div className="login-actions">
-              <Button type="button" fullWidth disabled={!partnerName.trim() || partnerBirthDigits.length !== 8 || Boolean(partnerBirthDateError)} className="login-submit" onClick={() => setOnboardingDecorStep("avatarStyle")}>
+              <Button type="button" fullWidth disabled={!partnerName.trim() || !partnerGender || partnerBirthDigits.length !== 8 || Boolean(partnerBirthDateError)} className="login-submit" onClick={() => setOnboardingDecorStep("avatarStyle")}>
                 <span className="text-label-kr">다음 ▶</span>
               </Button>
             </div>
@@ -1285,7 +1334,11 @@ export default function Home() {
               <h1>내 연인은 어떤 사람일까요?</h1>
               <p>사전 질문에 답해주시면 먼저 기억해둘게요!</p>
             </div>
-            <div className="login-fields step-fields">
+            <p className="step-option-caption step-fields-caption--top">
+              *자세히 답할수록 연인과 더 닮아가요.<br />
+              민감한 정보나 다른 사람의 개인정보는 입력하지 말아 주세요.
+            </p>
+            <div className="login-fields step-fields--tight">
               <div className="login-field">
                 <TextField label="사귄 날짜" inputMode="numeric" maxLength={10} placeholder="yyyy.mm.dd" value={formatBirthDisplay(relationshipStartedDigits)} onChange={(event) => handleRelationshipStartedChange(event.target.value)} error={relationshipStartedDateError} required />
               </div>
@@ -1293,10 +1346,6 @@ export default function Home() {
                 <AutoGrowField key={key} label={preQuestionLabels[key].label} placeholder={preQuestionLabels[key].placeholder} value={preQuestions[key]} maxLength={PARTNER_PROFILE_FIELD_MAX_LENGTH} onChange={(value) => setPreQuestions({ ...preQuestions, [key]: value })} />
               ))}
             </div>
-            <p className="step-option-caption step-fields-caption">
-              답변은 초기 프로필 카드와 D+day 기준이 됩니다.<br />
-              연인이 원치 않을 민감한 정보나 다른 사람의 정보는 넣지 마세요.
-            </p>
             <div className="login-actions">
               <Button type="submit" fullWidth className="login-submit" disabled={pending || !preQuestionsComplete}>
                 <span className="text-label-kr">완료 ▶</span>
@@ -1311,7 +1360,7 @@ export default function Home() {
     );
   }
 
-  const pixelChromeTabs = tab === "home" || tab === "record";
+  const pixelChromeTabs = tab === "home" || tab === "record" || tab === "profile";
 
   return (
     <MobileShell active={tab} onTabChange={(next) => { setTab(next); setToast(""); }} hideChrome={pixelChromeTabs}>
@@ -1320,7 +1369,7 @@ export default function Home() {
       {tab === "home" && <HomePreview onNavigate={setTab} />}
       {tab === "record" && <RecordPreview onNavigate={setTab} />}
       {tab === "letter" && <LetterPreview />}
-      {tab === "profile" && <ProfilePreview onAddRecord={() => setTab("record")} />}
+      {tab === "profile" && <ProfilePreview onNavigate={setTab} />}
       {showCoupleJustConnectedPopup && <CoupleConnectedPopup onClose={() => setShowCoupleJustConnectedPopup(false)} />}
       <Toast message={toast} onDismiss={() => setToast("")} />
     </MobileShell>
