@@ -1024,7 +1024,6 @@ export default function Home() {
                 </span>
               </div>
             </div>
-            <p className="step-option-caption step-option-caption--left">대화는 말투를 학습하는 데만 사용되며,<br />학습이 끝나면 바로 삭제돼요.</p>
             <div className="login-actions">
               <Button type="button" fullWidth className="login-submit" onClick={() => setShowCoupleConnectedPopup(true)}>
                 <span className="text-label-kr">완료 ▶</span>
@@ -1115,7 +1114,6 @@ export default function Home() {
               </span>
             </div>
           </div>
-          <p className="step-option-caption step-option-caption--left">대화는 말투를 학습하는 데만 사용되며,<br />학습이 끝나면 바로 삭제돼요.</p>
           <div className="login-actions">
             <Button type="submit" fullWidth className="login-submit" disabled={pending || !inviteCodeInput.trim()}>
               <span className="text-label-kr">연결하기 ▶</span>
