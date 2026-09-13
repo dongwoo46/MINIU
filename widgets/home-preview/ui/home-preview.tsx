@@ -6,6 +6,7 @@ import {
   createMiniu,
   getChatQuota,
   getHouse,
+  getPreQuestions,
   listNotifications,
   sendAffection,
   sendChatMessage,
@@ -32,6 +33,16 @@ const AFFECTION_BUTTON =
   "flex-1 flex flex-col items-center justify-center gap-0.5 h-[76px] px-0.5 py-2 border-2 border-white bg-gradient-to-b from-white via-[#accef3] to-[#7cb6f6] shadow-[2px_2px_0px_rgba(17,17,17,0.2)] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed";
 const ATTR_PICK =
   "px-2 py-1 border-2 border-[#2b1f28] font-pixel text-[10px] tracking-[0.3px] cursor-pointer";
+
+function calcDDay(startedOn: string | null): number | null {
+  if (!startedOn) return null;
+  const start = new Date(`${startedOn}T00:00:00`);
+  if (Number.isNaN(start.getTime())) return null;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  start.setHours(0, 0, 0, 0);
+  return Math.floor((today.getTime() - start.getTime()) / 86400000) + 1;
+}
 
 function AttributePicker({ label, options, value, onChange }: { label: string; options: string[]; value: string; onChange: (value: string) => void }) {
   return (
@@ -70,16 +81,18 @@ export function HomePreview({ onNavigate }: { onNavigate?: (tab: PreviewTab) => 
   const [status, setStatus] = useState("");
   const [pending, setPending] = useState(false);
   const [showHousePopup, setShowHousePopup] = useState(false);
+  const [relationshipStartedOn, setRelationshipStartedOn] = useState<string | null>(null);
   const messageRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     let cancelled = false;
-    Promise.all([getHouse(), getChatQuota(), listNotifications()])
-      .then(([houseData, quotaData, notificationData]) => {
+    Promise.all([getHouse(), getChatQuota(), listNotifications(), getPreQuestions().catch(() => ({ preQuestions: null }))])
+      .then(([houseData, quotaData, notificationData, preQuestionsData]) => {
         if (!cancelled) {
           setHouse(houseData);
           setQuota(quotaData);
           setUnreadCount(notificationData.unreadCount);
+          setRelationshipStartedOn(preQuestionsData.preQuestions?.relationshipStartedOn ?? null);
         }
       })
       .catch((error) => {
@@ -160,6 +173,7 @@ export function HomePreview({ onNavigate }: { onNavigate?: (tab: PreviewTab) => 
   }
 
   const partnerName = house?.partner.miniu?.name ?? "연인";
+  const dDay = calcDDay(relationshipStartedOn);
 
   return (
     <div className="relative flex flex-col min-h-dvh w-full bg-gradient-to-b from-[#7cb6f6] via-[#e9f9ff] to-white text-[#191f28]">
@@ -248,7 +262,7 @@ export function HomePreview({ onNavigate }: { onNavigate?: (tab: PreviewTab) => 
 
           <div className="flex flex-col w-full bg-[#d8dee9]">
             <div className="flex justify-between w-full box-border px-2 pt-0.5 pb-1.5 font-pixel text-xs [&_p]:m-0">
-              <p>{house?.locks.needsMiniu ? "내 미니유를 만들면 시작해요" : `준비 완료 (${partnerName}와 함께)`}</p>
+              <p>{house?.locks.needsMiniu ? "내 미니유를 만들면 시작해요" : dDay !== null ? `준비 완료 (D+${dDay}일째 사랑 중)` : "준비 완료"}</p>
               <p>{quota ? `대화 잔여 ${quota.remaining}/${quota.limit}` : "확인 중"}</p>
             </div>
             <form className="flex flex-col gap-1 pt-[9px] px-2 pb-2 border-t border-[#4e5968]" onSubmit={submitChat}>
@@ -268,6 +282,7 @@ export function HomePreview({ onNavigate }: { onNavigate?: (tab: PreviewTab) => 
                   {!isMessageFocused && message.length === 0 ? (
                     <div className="absolute inset-0 flex items-center pt-[10px] pr-4 pb-[10px] pl-[10px] pointer-events-none font-pixel text-xs tracking-[0.3px] text-[#db2777]" aria-hidden="true">
                       <span>{partnerName}에게 한마디...</span>
+                      <span className="font-['Space_Mono',monospace] text-sm">|</span>
                     </div>
                   ) : null}
                 </div>
@@ -280,7 +295,7 @@ export function HomePreview({ onNavigate }: { onNavigate?: (tab: PreviewTab) => 
                   <p className="text-[10px]! font-normal!">▼</p>
                 </button>
               </div>
-              {status && <p className="m-0 px-1 font-pixel text-xs text-[#333d4b]">{status}</p>}
+              <p className="m-0 px-1 font-pixel text-xs text-[#333d4b]">{status || `${partnerName} is thinking of you...`}</p>
             </form>
           </div>
         </div>
@@ -306,7 +321,7 @@ export function HomePreview({ onNavigate }: { onNavigate?: (tab: PreviewTab) => 
         )}
 
         {house?.locks.canVisit && (
-          <ButtonPrimary label={`${partnerName} 집에 놀러가기`} disabled={pending} onClick={() => setShowHousePopup(true)} />
+          <ButtonPrimary label={`${partnerName}집 놀러가기`} disabled={pending} onClick={() => setShowHousePopup(true)} />
         )}
 
       </div>
