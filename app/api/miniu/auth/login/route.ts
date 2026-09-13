@@ -11,6 +11,13 @@ export async function POST(request: Request) {
     const email = normalizeEmail(stringField(body, "email"));
     const password = stringField(body, "password");
 
+    // verifySupabasePassword already rejects with 403 if Supabase itself considers the
+    // email unconfirmed, so reaching this point means Supabase has confirmed it. Our own
+    // profiles.email_verified_at is a denormalized copy that the /auth/callback redirect
+    // sometimes fails to update (e.g. Supabase's default confirmation email verifies
+    // server-side before redirecting, so no token reaches our callback) — heal it here
+    // instead of trusting it as a second gate, which previously blocked genuinely
+    // verified users.
     const userId = await verifySupabasePassword(email, password);
     let user = await getProfileById(userId);
     if (!user && (await restoreProfileDeletion(userId))) {

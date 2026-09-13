@@ -28,8 +28,11 @@ export function toProfileMergeCandidate(row: ProfileMergeCandidateRow, cards: Pr
 }
 
 export async function ensureMergeCandidates(userId: string, cards: ProfileCardRow[]): Promise<ProfileMergeCandidateRow[]> {
-  const existing = await selectRows<ProfileMergeCandidateRow>("profile_merge_candidates", `user_id=eq.${userId}&status=eq.pending&select=*`);
-  const existingPairs = new Set(existing.map((candidate) => pairKey(candidate.source_card_id, candidate.target_card_id)));
+  // 모든 상태(pending/accepted/rejected)를 다 가져와야 한다 — rejected를 뺀 채 pending만 보면
+  // 사용자가 이미 거절한 조합이 다음 조회 때 똑같이 다시 후보로 뜬다(재질문 버그).
+  const allCandidates = await selectRows<ProfileMergeCandidateRow>("profile_merge_candidates", `user_id=eq.${userId}&select=*`);
+  const pendingExisting = allCandidates.filter((candidate) => candidate.status === "pending");
+  const existingPairs = new Set(allCandidates.map((candidate) => pairKey(candidate.source_card_id, candidate.target_card_id)));
   const newCandidates: Array<Pick<ProfileMergeCandidateRow, "user_id" | "source_card_id" | "target_card_id" | "reason">> = [];
 
   for (const source of cards) {
@@ -52,10 +55,10 @@ export async function ensureMergeCandidates(userId: string, cards: ProfileCardRo
   }
 
   if (newCandidates.length === 0) {
-    return existing;
+    return pendingExisting;
   }
   const created = await insertRows<ProfileMergeCandidateRow>("profile_merge_candidates", newCandidates);
-  return [...created, ...existing];
+  return [...created, ...pendingExisting];
 }
 
 export async function decideMergeCandidate(userId: string, id: string, status: "accepted" | "rejected"): Promise<ProfileMergeCandidateRow[]> {

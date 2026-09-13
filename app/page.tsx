@@ -359,7 +359,6 @@ export default function Home() {
     }
   }, []);
 
-  const showPreview = () => setToast("지금은 화면 프리뷰예요. 입력한 내용은 전송·저장되지 않아요.");
   function addSpeechPhotos(files: File[]) {
     if (files.length === 0) {
       return;
@@ -1250,8 +1249,8 @@ export default function Home() {
       {!pixelChromeTabs && !me.couple && <Surface className="onboarding-banner"><strong>연인과 연결하기</strong><span>홈은 볼 수 있지만 기록·프로필·문자·채팅은 연결 후 열려요.</span></Surface>}
       {tab === "home" && <HomePreview onNavigate={setTab} />}
       {tab === "record" && <RecordPreview onNavigate={setTab} />}
-      {tab === "letter" && <LetterPreview onPreview={showPreview} />}
-      {tab === "profile" && <ProfilePreview onPreview={showPreview} />}
+      {tab === "letter" && <LetterPreview />}
+      {tab === "profile" && <ProfilePreview onAddRecord={() => setTab("record")} />}
       {showCoupleJustConnectedPopup && <CoupleConnectedPopup onClose={() => setShowCoupleJustConnectedPopup(false)} />}
       <Toast message={toast} onDismiss={() => setToast("")} />
     </MobileShell>
