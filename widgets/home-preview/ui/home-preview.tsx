@@ -34,6 +34,17 @@ const AFFECTION_BUTTON =
 const ATTR_PICK =
   "px-2 py-1 border-2 border-[#2b1f28] font-pixel text-[10px] tracking-[0.3px] cursor-pointer";
 
+// 이름 끝 글자에 받침이 있으면 "아", 없으면 "야"(한글이 아니면 "야"로 기본값).
+function withVocative(name: string): string {
+  const lastChar = name.trim().slice(-1);
+  const code = lastChar.charCodeAt(0);
+  if (code < 0xac00 || code > 0xd7a3) {
+    return `${name}야`;
+  }
+  const hasFinalConsonant = (code - 0xac00) % 28 !== 0;
+  return `${name}${hasFinalConsonant ? "아" : "야"}`;
+}
+
 function calcDDay(startedOn: string | null): number | null {
   if (!startedOn) return null;
   const start = new Date(`${startedOn}T00:00:00`);
@@ -245,7 +256,7 @@ export function HomePreview({ onNavigate }: { onNavigate?: (tab: PreviewTab) => 
               <div className="absolute left-1/2 top-[15px] -translate-x-1/2 max-w-[calc(100%-28px)]">
                 <div className="flex flex-col items-end px-[14px] py-1.5 bg-white border-2 border-[#2b1f28] drop-shadow-[2px_2px_0px_#2b1f28]">
                   <p className="m-0 [display:-webkit-box] w-fit max-w-full [-webkit-line-clamp:2] [-webkit-box-orient:vertical] overflow-hidden text-center font-pixel text-sm leading-[1.5] break-words">
-                    {reply || `${partnerName}에게 말을 걸어보세요`}
+                    {reply || `"${withVocative(partnerName)} 오늘도 수고많았어! 오늘 날씨 너무 덥다. 더위 조심해~"`}
                   </p>
                   <p className="m-0 text-[10px]!">▼</p>
                 </div>
