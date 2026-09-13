@@ -93,7 +93,25 @@ export function HomePreview({ onNavigate }: { onNavigate?: (tab: PreviewTab) => 
   const [pending, setPending] = useState(false);
   const [showHousePopup, setShowHousePopup] = useState(false);
   const [relationshipStartedOn, setRelationshipStartedOn] = useState<string | null>(null);
+  const [isMessageOverflowing, setIsMessageOverflowing] = useState(false);
+  const [thumbStyle, setThumbStyle] = useState({ top: 0, height: 24 });
   const messageRef = useRef<HTMLTextAreaElement>(null);
+  const messageTrackRef = useRef<HTMLDivElement>(null);
+  const MIN_THUMB_HEIGHT = 24;
+  // 1줄(콘텐츠 20px)까지는 그대로, 2줄(콘텐츠 40px)부터는 박스를 더 키우지 않고 스크롤한다.
+  const INPUT_MIN_CONTENT_HEIGHT = 20;
+  const INPUT_MAX_CONTENT_HEIGHT = 40;
+
+  function updateThumbPosition() {
+    const el = messageRef.current;
+    if (!el) return;
+    const trackHeight = messageTrackRef.current?.clientHeight ?? el.clientHeight;
+    const thumbHeight = Math.max(MIN_THUMB_HEIGHT, (el.clientHeight / el.scrollHeight) * trackHeight);
+    const maxScrollTop = el.scrollHeight - el.clientHeight;
+    const maxThumbTop = trackHeight - thumbHeight;
+    const thumbTop = maxScrollTop > 0 ? (el.scrollTop / maxScrollTop) * maxThumbTop : 0;
+    setThumbStyle({ top: thumbTop, height: thumbHeight });
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -120,8 +138,18 @@ export function HomePreview({ onNavigate }: { onNavigate?: (tab: PreviewTab) => 
     const el = messageRef.current;
     if (!el) return;
     el.style.height = "auto";
-    el.style.height = `${Math.min(Math.max(el.scrollHeight, 20), 64)}px`;
+    const naturalHeight = el.scrollHeight;
+    const nextHeight = Math.min(Math.max(naturalHeight, INPUT_MIN_CONTENT_HEIGHT), INPUT_MAX_CONTENT_HEIGHT);
+    el.style.height = `${nextHeight}px`;
+    const overflowing = naturalHeight > INPUT_MAX_CONTENT_HEIGHT;
+    setIsMessageOverflowing(overflowing);
+    if (overflowing) updateThumbPosition();
   }, [message]);
+
+  useEffect(() => {
+    if (isMessageOverflowing) updateThumbPosition();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isMessageOverflowing]);
 
   async function submitChat(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -288,10 +316,11 @@ export function HomePreview({ onNavigate }: { onNavigate?: (tab: PreviewTab) => 
                     ref={messageRef}
                     className="block w-full h-5 m-0 p-0 resize-none overflow-y-auto border-none outline-none bg-transparent font-pixel text-xs tracking-[0.3px] leading-[1.4] text-[#db2777] disabled:cursor-not-allowed disabled:opacity-50 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
                     rows={1}
-                    maxLength={150}
+                    maxLength={100}
                     value={message}
                     disabled={chatExhausted}
                     onChange={(event) => setMessage(event.target.value)}
+                    onScroll={updateThumbPosition}
                     onFocus={() => setIsMessageFocused(true)}
                     onBlur={() => setIsMessageFocused(false)}
                     aria-label={`${partnerName}에게 보낼 메시지`}
@@ -302,11 +331,19 @@ export function HomePreview({ onNavigate }: { onNavigate?: (tab: PreviewTab) => 
                       <span className="font-['Space_Mono',monospace] text-sm animate-[miniuBlink_1s_steps(1,end)_infinite]">|</span>
                     </div>
                   ) : null}
+                  {isMessageOverflowing ? (
+                    <div ref={messageTrackRef} className="absolute right-0 top-0 bottom-0 w-[6px] bg-[#b0b8c1] border-l-2 border-[#2b1f28]" aria-hidden="true">
+                      <div
+                        className="absolute left-0 w-full bg-white border-t-2 border-b-2 border-[#2b1f28]"
+                        style={{ top: `${thumbStyle.top}px`, height: `${thumbStyle.height}px` }}
+                      />
+                    </div>
+                  ) : null}
                 </div>
                 <button
                   type="submit"
                   disabled={pending || !message.trim() || chatExhausted}
-                  className="flex self-stretch shrink-0 items-center gap-0.5 px-3 py-2 border-2 border-[#2b1f28] bg-gradient-to-b from-white via-[#accef3] to-[#7cb6f6] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed [&_p]:m-0 [&_p]:font-['Silkscreen',monospace] [&_p]:font-bold [&_p]:text-xs [&_p]:text-[#191f28]"
+                  className="flex h-[42px] shrink-0 items-center gap-0.5 px-3 py-2 border-2 border-[#2b1f28] bg-gradient-to-b from-white via-[#accef3] to-[#7cb6f6] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed [&_p]:m-0 [&_p]:font-['Silkscreen',monospace] [&_p]:font-bold [&_p]:text-xs [&_p]:text-[#191f28]"
                 >
                   <p>Send</p>
                   <p className="text-[10px]! font-normal!">▼</p>
