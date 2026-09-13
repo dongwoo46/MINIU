@@ -836,12 +836,6 @@ export default function Home() {
                     <span className="text-label-kr">로그인 ▶</span>
                   </Button>
                   <button className="login-signup-link text-label-kr" type="button" onClick={() => setMode("signup")}>새 계정 만들기</button>
-                  {process.env.NODE_ENV !== "production" && (
-                    <>
-                      <button className="auth-link" type="button" onClick={() => setMode("coupleInvite")}>연인 연결 화면 미리보기 (dev)</button>
-                      <button className="auth-link" type="button" onClick={() => setDevHomePreview(true)}>로그인·커플연결·미니미생성 완료 화면 (dev)</button>
-                    </>
-                  )}
                 </div>
               </form>
             </div>
@@ -874,7 +868,7 @@ export default function Home() {
               </div>
             </div>
             <div className="login-actions">
-              <Button type="button" fullWidth disabled={Boolean(partnerBirthDateError)} className="login-submit" onClick={() => setMode("avatarStyle")}>
+              <Button type="button" fullWidth disabled={!partnerName.trim() || !partnerGender || partnerBirthDigits.length !== 8 || Boolean(partnerBirthDateError)} className="login-submit" onClick={() => setMode("avatarStyle")}>
                 <span className="text-label-kr">다음 ▶</span>
               </Button>
               <button className="login-signup-link text-label-kr" type="button" onClick={() => setMode("login")}>로그인으로 돌아가기</button>
@@ -1062,7 +1056,11 @@ export default function Home() {
               <h1>내 연인은 어떤 사람일까요?</h1>
               <p>사전 질문에 답해주시면 먼저 기억해둘게요!</p>
             </div>
-            <div className="login-fields step-fields">
+            <p className="step-option-caption step-fields-caption--top">
+              *자세히 답할수록 연인과 더 닮아가요.<br />
+              민감한 정보나 다른 사람의 개인정보는 입력하지 말아 주세요.
+            </p>
+            <div className="login-fields step-fields--tight">
               <div className="login-field">
                 <TextField label="사귄 날짜" inputMode="numeric" maxLength={10} placeholder="yyyy.mm.dd" value={formatBirthDisplay(partnerProfileStartedDigits)} onChange={(event) => setPartnerProfileStartedDigits(event.target.value.replace(/\D/g, "").slice(0, 8))} error={partnerProfileStartedDateError} />
               </div>
@@ -1072,10 +1070,6 @@ export default function Home() {
               <AutoGrowField label="자주 하는 습관" placeholder="예: 자기 전에 음악을 듣는다" value={partnerProfile.habits} maxLength={PARTNER_PROFILE_FIELD_MAX_LENGTH} onChange={(value) => setPartnerProfile({ ...partnerProfile, habits: value })} />
               <AutoGrowField label="가치관" placeholder="예: 약속을 지키는 것" value={partnerProfile.values} maxLength={PARTNER_PROFILE_FIELD_MAX_LENGTH} onChange={(value) => setPartnerProfile({ ...partnerProfile, values: value })} />
             </div>
-            <p className="step-option-caption step-fields-caption">
-              답변은 초기 프로필 카드와 D+day 기준이 됩니다.<br />
-              연인이 원치 않을 민감한 정보나 다른 사람의 정보는 넣지 마세요.
-            </p>
             <div className="login-actions">
               <Button type="button" fullWidth className="login-submit" disabled={!partnerProfileComplete} onClick={() => setShowMinimiCreatedPopup(true)}>
                 <span className="text-label-kr">다음 ▶</span>
@@ -1281,7 +1275,7 @@ export default function Home() {
               </div>
             </div>
             <div className="login-actions">
-              <Button type="button" fullWidth disabled={!partnerName.trim() || partnerBirthDigits.length !== 8 || Boolean(partnerBirthDateError)} className="login-submit" onClick={() => setOnboardingDecorStep("avatarStyle")}>
+              <Button type="button" fullWidth disabled={!partnerName.trim() || !partnerGender || partnerBirthDigits.length !== 8 || Boolean(partnerBirthDateError)} className="login-submit" onClick={() => setOnboardingDecorStep("avatarStyle")}>
                 <span className="text-label-kr">다음 ▶</span>
               </Button>
             </div>
@@ -1340,7 +1334,11 @@ export default function Home() {
               <h1>내 연인은 어떤 사람일까요?</h1>
               <p>사전 질문에 답해주시면 먼저 기억해둘게요!</p>
             </div>
-            <div className="login-fields step-fields">
+            <p className="step-option-caption step-fields-caption--top">
+              *자세히 답할수록 연인과 더 닮아가요.<br />
+              민감한 정보나 다른 사람의 개인정보는 입력하지 말아 주세요.
+            </p>
+            <div className="login-fields step-fields--tight">
               <div className="login-field">
                 <TextField label="사귄 날짜" inputMode="numeric" maxLength={10} placeholder="yyyy.mm.dd" value={formatBirthDisplay(relationshipStartedDigits)} onChange={(event) => handleRelationshipStartedChange(event.target.value)} error={relationshipStartedDateError} required />
               </div>
@@ -1348,10 +1346,6 @@ export default function Home() {
                 <AutoGrowField key={key} label={preQuestionLabels[key].label} placeholder={preQuestionLabels[key].placeholder} value={preQuestions[key]} maxLength={PARTNER_PROFILE_FIELD_MAX_LENGTH} onChange={(value) => setPreQuestions({ ...preQuestions, [key]: value })} />
               ))}
             </div>
-            <p className="step-option-caption step-fields-caption">
-              답변은 초기 프로필 카드와 D+day 기준이 됩니다.<br />
-              연인이 원치 않을 민감한 정보나 다른 사람의 정보는 넣지 마세요.
-            </p>
             <div className="login-actions">
               <Button type="submit" fullWidth className="login-submit" disabled={pending || !preQuestionsComplete}>
                 <span className="text-label-kr">완료 ▶</span>
