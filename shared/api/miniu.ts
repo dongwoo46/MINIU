@@ -164,6 +164,14 @@ export function getHouse(): Promise<HouseData> {
   return miniuRequest("/api/miniu/house");
 }
 
+export type MeData = {
+  user: { name: string };
+};
+
+export function getMe(): Promise<MeData> {
+  return miniuRequest("/api/miniu/me");
+}
+
 export type PreQuestions = {
   id: string;
   userId: string;

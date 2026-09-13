@@ -123,6 +123,36 @@ function ProfileFileWindow({
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<ProfileCardData | null>(null);
+  const [listThumb, setListThumb] = useState({ top: 0, height: 24, visible: false });
+  const listRef = useRef<HTMLDivElement>(null);
+  const [editThumb, setEditThumb] = useState({ top: 0, height: 24, visible: false });
+  const editTextareaRef = useRef<HTMLTextAreaElement>(null);
+  const LIST_MIN_THUMB_HEIGHT = 24;
+
+  function updateListThumbPosition() {
+    const el = listRef.current;
+    if (!el) return;
+    const trackHeight = el.clientHeight;
+    const overflowing = el.scrollHeight > el.clientHeight;
+    const thumbHeight = Math.max(LIST_MIN_THUMB_HEIGHT, (el.clientHeight / el.scrollHeight) * trackHeight);
+    const maxScrollTop = el.scrollHeight - el.clientHeight;
+    const maxThumbTop = trackHeight - thumbHeight;
+    const thumbTop = maxScrollTop > 0 ? (el.scrollTop / maxScrollTop) * maxThumbTop : 0;
+    setListThumb({ top: thumbTop, height: thumbHeight, visible: overflowing });
+  }
+
+  function updateEditThumbPosition() {
+    const el = editTextareaRef.current;
+    if (!el) return;
+    const trackHeight = el.clientHeight;
+    const overflowing = el.scrollHeight > el.clientHeight;
+    const thumbHeight = Math.max(LIST_MIN_THUMB_HEIGHT, (el.clientHeight / el.scrollHeight) * trackHeight);
+    const maxScrollTop = el.scrollHeight - el.clientHeight;
+    const maxThumbTop = trackHeight - thumbHeight;
+    const thumbTop = maxScrollTop > 0 ? (el.scrollTop / maxScrollTop) * maxThumbTop : 0;
+    setEditThumb({ top: thumbTop, height: thumbHeight, visible: overflowing });
+  }
+
   const tabsDrag = useRef({
     active: false,
     moved: false,
@@ -184,6 +214,14 @@ function ProfileFileWindow({
   const cardsInTab = cards.filter((card) => card.category === activeTab);
   const categoryBadgeMap = buildCategoryBadgeMap(cardsInTab);
   const sortedCards = [...cardsInTab].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+
+  useEffect(() => {
+    updateListThumbPosition();
+  }, [sortedCards.length, expandedId, editingId]);
+
+  useEffect(() => {
+    if (editingId) updateEditThumbPosition();
+  }, [editingId, editingContent]);
 
   function toggleExpand(id: string) {
     setEditingId(null);
@@ -345,7 +383,12 @@ function ProfileFileWindow({
           })}
         </div>
 
-        <div className="flex-1 overflow-y-auto bg-white">
+        <div className="relative flex-1 min-h-0">
+          <div
+            ref={listRef}
+            className="h-full overflow-y-auto bg-white [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            onScroll={updateListThumbPosition}
+          >
           {loadError ? <p className="p-3 font-pixel text-xs text-[#db2777]">{loadError}</p> : null}
           {!loadError && sortedCards.length === 0 ? (
             <p className="p-8 text-center font-pixel text-xs text-[#8b95a1]">아직 저장된 정보가 없어요</p>
@@ -354,9 +397,13 @@ function ProfileFileWindow({
             const isExpanded = expandedId === card.id;
             const isEditing = editingId === card.id;
             return (
-              <div key={card.id} className={`border-b border-dashed border-[#b0b8c1] px-2 py-2.5 ${isExpanded ? "bg-[#c9cfda]" : ""}`}>
+              <div
+                key={card.id}
+                className={`border-b border-dashed border-[#b0b8c1] ${isExpanded ? "px-4 py-4" : "px-2 py-2.5"}`}
+                style={isExpanded ? { background: "var(--color-gray-quaternary)" } : undefined}
+              >
                 <div className="flex items-center gap-4">
-                  <div className="flex-1 min-w-0 flex flex-col gap-0.5">
+                  <div className={`flex-1 min-w-0 flex flex-col ${isEditing ? "gap-1.5" : "gap-0.5"}`}>
                     <div className="flex items-center gap-1.5">
                       <span className="shrink-0 px-[5px] py-px bg-[#fce7f3] border border-[#f9a8d4] font-pixel text-[10px] text-[#db2777]">
                         {categoryBadgeMap.get(card.id)}
@@ -364,13 +411,26 @@ function ProfileFileWindow({
                       <span className="font-pixel text-xs text-[#6b7684] tracking-[0.3px]">{formatUpdateDate(card.updatedAt)}</span>
                     </div>
                     {isEditing ? (
-                      <textarea
-                        className="w-full mt-1 font-pixel text-sm text-[#191f28] tracking-[0.196px] border-2 border-[#2b1f28] p-1 resize-none"
-                        rows={2}
-                        value={editingContent}
-                        onChange={(event) => setEditingContent(event.target.value)}
-                        aria-label="프로필 카드 내용 수정"
-                      />
+                      <div className="relative">
+                        <textarea
+                          ref={editTextareaRef}
+                          className="w-full font-pixel text-sm text-[#191f28] tracking-[0.196px] bg-white border-2 border-[#2b1f28] pl-[10px] pr-4 py-2 shadow-[inset_0px_2px_4px_0px_rgba(0,0,0,0.05)] resize-none overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                          rows={2}
+                          value={editingContent}
+                          onChange={(event) => setEditingContent(event.target.value)}
+                          onScroll={updateEditThumbPosition}
+                          aria-label="프로필 카드 내용 수정"
+                          autoFocus
+                        />
+                        {editThumb.visible ? (
+                          <div className="absolute right-0 top-0 bottom-0 w-[6px] bg-[#b0b8c1] border-l-2 border-[#2b1f28]" aria-hidden="true">
+                            <div
+                              className="absolute left-0 w-full bg-white border-t-2 border-b-2 border-[#2b1f28]"
+                              style={{ top: `${editThumb.top}px`, height: `${editThumb.height}px` }}
+                            />
+                          </div>
+                        ) : null}
+                      </div>
                     ) : (
                       <p className="m-0 font-pixel text-sm text-[#191f28] tracking-[0.196px]">{card.content}</p>
                     )}
@@ -386,7 +446,7 @@ function ProfileFileWindow({
                   </button>
                 </div>
                 {isExpanded ? (
-                  <div className="mt-2 flex items-center justify-between gap-2 font-pixel text-sm tracking-[0.196px]">
+                  <div className="mt-6 flex items-center justify-between gap-2 font-pixel text-sm tracking-[0.196px]">
                     <span className="flex-1 min-w-0 truncate text-[#6b7684]">{buildRefLabel(card, recordBadgeMap) ?? "직접 관리 중"}</span>
                     <div className="flex items-center gap-3 shrink-0">
                       {isEditing ? (
@@ -418,6 +478,15 @@ function ProfileFileWindow({
             );
           })}
           {actionError ? <p className="p-2 font-pixel text-xs text-[#db2777]">{actionError}</p> : null}
+        </div>
+        {listThumb.visible ? (
+          <div className="absolute right-0 top-0 bottom-0 w-[6px] bg-[#b0b8c1] border-l-2 border-[#2b1f28]" aria-hidden="true">
+            <div
+              className="absolute left-0 w-full bg-white border-t-2 border-b-2 border-[#2b1f28]"
+              style={{ top: `${listThumb.top}px`, height: `${listThumb.height}px` }}
+            />
+          </div>
+        ) : null}
         </div>
       </div>
 
@@ -480,7 +549,7 @@ export function ProfilePreview({
   }
 
   return (
-    <div className="relative flex flex-col min-h-dvh w-full bg-gradient-to-b from-[#7cb6f6] via-[#e9f9ff] to-white text-[#191f28]">
+    <div className="relative flex flex-col h-dvh w-full bg-gradient-to-b from-[#7cb6f6] via-[#e9f9ff] to-white text-[#191f28]">
       <div className="absolute inset-x-0 top-0 h-[404px] overflow-hidden pointer-events-none" aria-hidden="true">
         <img className="absolute left-[-7px] top-[-3px] w-[404px] h-[404px] object-cover mix-blend-soft-light opacity-30 rotate-180" src="/minimi/bg-soft-light.png" alt="" />
       </div>
@@ -520,7 +589,7 @@ export function ProfilePreview({
 
       {loadError ? <p className="relative mx-4 mt-2 font-pixel text-xs text-[#db2777]">{loadError}</p> : null}
 
-      <div className="relative flex-1 flex flex-col gap-6 px-4 pb-[130px] mt-2">
+      <div className="relative flex-1 flex flex-col gap-6 px-4 pb-[130px] mt-2 overflow-y-auto">
         <section className="flex flex-col gap-2.5">
           <p className="m-0 font-pixel text-base text-[#191f28] tracking-[0.16px]">연인 정보</p>
           <div className="flex items-start justify-between gap-2 bg-white border-2 border-[#2b1f28] shadow-[2px_2px_0px_rgba(0,0,0,0.2)] px-[18px] py-4">
@@ -598,20 +667,22 @@ export function ProfilePreview({
         </section>
       </div>
 
-      <nav className="fixed inset-x-0 bottom-0 z-[5] mx-auto flex w-full max-w-[var(--shell-width)] items-center gap-[10px] bg-gradient-to-t from-white via-white/95 to-transparent px-7 pt-4 pb-[max(20px,env(safe-area-inset-bottom))]">
-        <button type="button" className={`${NAV_ITEM} opacity-60`} onClick={() => onNavigate?.("home")}>
-          <img src="/minimi/nav-home.png" alt="" aria-hidden="true" />
-          <p>홈</p>
-        </button>
-        <button type="button" className={`${NAV_ITEM} opacity-60`} onClick={() => onNavigate?.("record")}>
-          <img src="/minimi/nav-record.png" alt="" aria-hidden="true" />
-          <p>기록</p>
-        </button>
-        <button type="button" className={NAV_ITEM} onClick={() => onNavigate?.("profile")}>
-          <img src="/minimi/nav-profile.png" alt="" aria-hidden="true" />
-          <p>프로필</p>
-        </button>
-      </nav>
+      <div className="fixed inset-x-0 bottom-0 z-[5] mx-auto w-full max-w-[var(--shell-width)] bg-gradient-to-t from-white via-white/95 to-transparent">
+        <nav className="flex w-full items-center gap-[10px] px-7 pt-4 pb-[max(20px,env(safe-area-inset-bottom))]">
+          <button type="button" className={`${NAV_ITEM} opacity-60`} onClick={() => onNavigate?.("home")}>
+            <img src="/minimi/nav-home.png" alt="" aria-hidden="true" />
+            <p>홈</p>
+          </button>
+          <button type="button" className={`${NAV_ITEM} opacity-60`} onClick={() => onNavigate?.("record")}>
+            <img src="/minimi/nav-record.png" alt="" aria-hidden="true" />
+            <p>기록</p>
+          </button>
+          <button type="button" className={NAV_ITEM} onClick={() => onNavigate?.("profile")}>
+            <img src="/minimi/nav-profile.png" alt="" aria-hidden="true" />
+            <p>프로필</p>
+          </button>
+        </nav>
+      </div>
 
       {openCategory ? (
         <ProfileFileWindow

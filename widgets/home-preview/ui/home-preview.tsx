@@ -6,6 +6,7 @@ import {
   createMiniu,
   getChatQuota,
   getHouse,
+  getMe,
   getPreQuestions,
   listNotifications,
   sendAffection,
@@ -94,7 +95,7 @@ export function HomePreview({
 }: {
   onNavigate?: (tab: PreviewTab) => void;
   /** 개발용: 백엔드 호출 없이 완료 상태(로그인+커플 연결+미니미 생성)를 바로 보여줄 때만 사용. */
-  devMock?: { house: HouseData; quota: ChatQuota; unreadCount: number; relationshipStartedOn: string | null };
+  devMock?: { house: HouseData; quota: ChatQuota; unreadCount: number; relationshipStartedOn: string | null; myUserName?: string };
 }) {
   const [house, setHouse] = useState<HouseData | null>(devMock?.house ?? null);
   const [quota, setQuota] = useState<ChatQuota | null>(devMock?.quota ?? null);
@@ -116,6 +117,7 @@ export function HomePreview({
   const [isMessageOverflowing, setIsMessageOverflowing] = useState(false);
   const [thumbStyle, setThumbStyle] = useState({ top: 0, height: 24 });
   const [inputBoxHeight, setInputBoxHeight] = useState(42);
+  const [myUserName, setMyUserName] = useState(devMock?.myUserName ?? "");
   const [affectionBubble, setAffectionBubble] = useState("");
   const [affectionEffectKey, setAffectionEffectKey] = useState(0);
   const messageRef = useRef<HTMLTextAreaElement>(null);
@@ -142,13 +144,14 @@ export function HomePreview({
   useEffect(() => {
     if (devMock) return;
     let cancelled = false;
-    Promise.all([getHouse(), getChatQuota(), listNotifications(), getPreQuestions().catch(() => ({ preQuestions: null }))])
-      .then(([houseData, quotaData, notificationData, preQuestionsData]) => {
+    Promise.all([getHouse(), getChatQuota(), listNotifications(), getPreQuestions().catch(() => ({ preQuestions: null })), getMe()])
+      .then(([houseData, quotaData, notificationData, preQuestionsData, meData]) => {
         if (!cancelled) {
           setHouse(houseData);
           setQuota(quotaData);
           setUnreadCount(notificationData.unreadCount);
           setRelationshipStartedOn(preQuestionsData.preQuestions?.relationshipStartedOn ?? null);
+          setMyUserName(meData.user.name);
         }
       })
       .catch((error) => {
@@ -254,11 +257,12 @@ export function HomePreview({
   }
 
   const partnerName = house?.partner.miniu?.name ?? "연인";
+  const myName = myUserName || "나";
   const chatExhausted = quota !== null && quota.remaining <= 0;
   const dDay = calcDDay(relationshipStartedOn);
 
   return (
-    <div className="relative flex flex-col min-h-dvh w-full bg-gradient-to-b from-[#7cb6f6] via-[#e9f9ff] to-white text-[#191f28]">
+    <div className="relative flex flex-col h-dvh w-full bg-gradient-to-b from-[#7cb6f6] via-[#e9f9ff] to-white text-[#191f28]">
       <div className="absolute inset-x-0 top-0 h-[404px] overflow-hidden pointer-events-none" aria-hidden="true">
         <img className="absolute left-[-7px] top-[-3px] w-[404px] h-[404px] object-cover mix-blend-soft-light opacity-30 rotate-180" src="/minimi/bg-soft-light.png" alt="" />
       </div>
@@ -296,7 +300,7 @@ export function HomePreview({
         </div>
       </div>
 
-      <div className="relative flex-1 flex flex-col items-stretch gap-4 px-4 pb-[110px] mt-[26px]">
+      <div className="relative flex-1 flex flex-col items-stretch gap-4 px-4 pb-[110px] mt-[26px] overflow-y-auto">
         <div className="flex flex-col w-full border-2 border-[#2b1f28] shadow-[2px_2px_0px_0px_rgba(17,17,17,0.2)]">
           <div className={TITLE_BAR}>
             <p>jisoo_cam.exe - [Live Garden Stage]</p>
@@ -324,10 +328,10 @@ export function HomePreview({
             <div className="relative w-full h-[236px] overflow-hidden border-2 border-[#191f28]">
               <img className="w-full h-full object-cover" src="/minimi/bg-garden.png" alt="정원과 집 배경" />
 
-              <div className="absolute left-1/2 top-[15px] -translate-x-1/2 max-w-[calc(100%-28px)]">
+              <div className="absolute left-1/2 top-[15px] -translate-x-1/2 w-max max-w-[min(300px,calc(100%-28px))]">
                 <div className="flex flex-col items-end px-[14px] py-1.5 bg-white border-2 border-[#2b1f28] drop-shadow-[2px_2px_0px_#2b1f28]">
-                  <p className="m-0 [display:-webkit-box] w-fit max-w-full [-webkit-line-clamp:2] [-webkit-box-orient:vertical] overflow-hidden text-center font-pixel text-sm leading-[1.5] break-words">
-                    {reply || `"${withVocative(partnerName)} 오늘도 수고많았어! 오늘 날씨 너무 덥다. 더위 조심해~"`}
+                  <p className="m-0 w-fit max-w-full text-center font-pixel text-sm leading-[1.5] break-words">
+                    {reply || `"${withVocative(myName)} 오늘도 수고많았어! 오늘 날씨 너무 덥다. 더위 조심해~"`}
                   </p>
                   <p className="m-0 text-[10px]!">▼</p>
                 </div>
@@ -421,20 +425,22 @@ export function HomePreview({
 
       </div>
 
-      <nav className="fixed inset-x-0 bottom-0 z-[5] mx-auto flex w-full max-w-[var(--shell-width)] items-center gap-[10px] bg-gradient-to-t from-white via-white/95 to-transparent px-7 pt-4 pb-[max(20px,env(safe-area-inset-bottom))]">
-        <button type="button" className={NAV_ITEM} onClick={() => onNavigate?.("home")}>
-          <img src="/minimi/nav-home.png" alt="" aria-hidden="true" />
-          <p>홈</p>
-        </button>
-        <button type="button" className={`${NAV_ITEM} opacity-60`} onClick={() => onNavigate?.("record")}>
-          <img src="/minimi/nav-record.png" alt="" aria-hidden="true" />
-          <p>기록</p>
-        </button>
-        <button type="button" className={`${NAV_ITEM} opacity-60`} onClick={() => onNavigate?.("profile")}>
-          <img src="/minimi/nav-profile.png" alt="" aria-hidden="true" />
-          <p>프로필</p>
-        </button>
-      </nav>
+      <div className="fixed inset-x-0 bottom-0 z-[5] mx-auto w-full max-w-[var(--shell-width)] bg-gradient-to-t from-white via-white/95 to-transparent">
+        <nav className="flex w-full items-center gap-[10px] px-7 pt-4 pb-[max(20px,env(safe-area-inset-bottom))]">
+          <button type="button" className={NAV_ITEM} onClick={() => onNavigate?.("home")}>
+            <img src="/minimi/nav-home.png" alt="" aria-hidden="true" />
+            <p>홈</p>
+          </button>
+          <button type="button" className={`${NAV_ITEM} opacity-60`} onClick={() => onNavigate?.("record")}>
+            <img src="/minimi/nav-record.png" alt="" aria-hidden="true" />
+            <p>기록</p>
+          </button>
+          <button type="button" className={`${NAV_ITEM} opacity-60`} onClick={() => onNavigate?.("profile")}>
+            <img src="/minimi/nav-profile.png" alt="" aria-hidden="true" />
+            <p>프로필</p>
+          </button>
+        </nav>
+      </div>
 
       {showHousePopup && (
         <>
