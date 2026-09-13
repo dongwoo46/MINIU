@@ -294,7 +294,7 @@ export function RecordPreview({
         )}
       </div>
 
-      <div className="fixed inset-x-0 bottom-0 z-[5] mx-auto w-full max-w-[var(--shell-width)] pt-8 px-4 pb-[max(20px,env(safe-area-inset-bottom))] bg-gradient-to-t from-white via-white/90 to-transparent">
+      <div className="fixed inset-x-0 bottom-0 z-[5] mx-auto w-full max-w-[var(--shell-width)] pt-8 px-7 pb-[max(20px,env(safe-area-inset-bottom))] bg-gradient-to-t from-white via-white/90 to-transparent">
         <ButtonPrimary label="기록하기" onClick={handleOpenWrite} />
 
         <nav className="flex items-center gap-[10px] w-full mt-2">

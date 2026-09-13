@@ -117,3 +117,44 @@ export function Window02({
     </div>
   );
 }
+
+type ProfileCardDeleteDialogProps = {
+  primaryLabel?: string;
+  secondaryLabel?: string;
+  onDelete?: () => void;
+  onCancel?: () => void;
+  className?: string;
+};
+
+// Figma node 183:51764 (window 3, profile_del) — 프로필 카드 삭제 확인 다이얼로그
+export function ProfileCardDeleteDialog({
+  primaryLabel = "삭제하기",
+  secondaryLabel = "취소",
+  onDelete,
+  onCancel,
+  className,
+}: ProfileCardDeleteDialogProps) {
+  return (
+    <div
+      className={`${DIALOG_BASE}${className ? ` ${className}` : ""}`}
+      role="dialog"
+      aria-modal="true"
+    >
+      <div className="flex flex-col items-center gap-2 px-2 py-5">
+        <div className="m-0 text-center font-pixel text-base tracking-[0.16px] leading-[1.5] text-[#191f28] [&_p]:m-0">
+          <p>카드를 삭제하면 되돌릴 수 없어요.</p>
+          <p>삭제할까요?</p>
+        </div>
+        <p className="m-0 font-pixel text-xs tracking-[0.3px] leading-[1.3] text-[#6b7684]">
+          기록탭의 관련 기록은 사라지지 않아요
+        </p>
+      </div>
+      <ButtonPopup
+        primaryLabel={primaryLabel}
+        secondaryLabel={secondaryLabel}
+        onPrimaryClick={onDelete}
+        onSecondaryClick={onCancel}
+      />
+    </div>
+  );
+}

@@ -1,8 +1,20 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { PreviewTab } from "@/shared/config/design-system";
-import { getHouse, getPreQuestions, listNotifications } from "@/shared/api/miniu";
+import {
+  MiniuApiError,
+  deleteProfileCard,
+  getHouse,
+  getPreQuestions,
+  listNotifications,
+  listProfileCards,
+  listRecords,
+  updateProfileCard,
+  type ProfileCardData,
+  type RecordEntry,
+} from "@/shared/api/miniu";
+import { ProfileCardDeleteDialog } from "@/shared/ui/dialog-window";
 
 const TITLE_BAR =
   "flex items-center justify-between px-2 py-1 border-b-2 border-[#4e5968] bg-gradient-to-r from-[#5376c7] via-[#5c82db] to-[#456cb8] [&_p]:m-0 [&_p]:font-pixel [&_p]:text-xs [&_p]:text-white [&_p]:tracking-[0.3px]";
@@ -33,19 +45,408 @@ function calcDDay(startedOn: string | null): number | null {
   return Math.floor((today.getTime() - start.getTime()) / 86400000) + 1;
 }
 
+// 카드에는 "10" 같은 배지 개념이 없어서, 카테고리 안에서 created_at 오름차순
+// 기준으로 화면에서 번호를 매겨 보여준다(정렬 순서와 무관하게 고정).
+function buildCategoryBadgeMap(cards: ProfileCardData[]): Map<string, string> {
+  const byCreatedAsc = [...cards].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+  const map = new Map<string, string>();
+  byCreatedAsc.forEach((card, index) => {
+    map.set(card.id, String(index + 1).padStart(2, "0"));
+  });
+  return map;
+}
+
+// 기록탭의 "file 01" 배지와 동일한 규칙(전체 기록 중 created_at 오름차순 번호).
+function buildRecordBadgeMap(records: RecordEntry[]): Map<string, string> {
+  const byCreatedAsc = [...records].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+  const map = new Map<string, string>();
+  byCreatedAsc.forEach((record, index) => {
+    map.set(record.id, `file ${String(index + 1).padStart(2, "0")}`);
+  });
+  return map;
+}
+
+function formatUpdateDate(iso: string): string {
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}.${pad(d.getMonth() + 1)}.${pad(d.getDate())} update`;
+}
+
+function describeApiError(error: unknown): string {
+  if (error instanceof MiniuApiError) {
+    if (error.status === 401) return "로그인이 필요해요.";
+    if (error.status === 403) return "연인과 연결해 주세요.";
+    return error.message;
+  }
+  return "잠시 후 다시 시도해 주세요.";
+}
+
+const SOURCE_TYPE_LABELS: Record<string, string> = {
+  record: "기록",
+  letter: "문자",
+  pre_question: "사전 질문",
+};
+
+function buildRefLabel(card: ProfileCardData, recordBadgeMap: Map<string, string>): string | null {
+  if (!card.sources.length) return null;
+  const groups = new Map<string, string[]>();
+  for (const source of card.sources) {
+    const label = SOURCE_TYPE_LABELS[source.type] ?? source.type;
+    const items = groups.get(label) ?? [];
+    if (source.type === "record") {
+      items.push(recordBadgeMap.get(source.id) ?? source.id);
+    }
+    groups.set(label, items);
+  }
+  return Array.from(groups.entries())
+    .map(([label, items]) => (items.length ? `${label} > ${items.join(", ")}` : label))
+    .join(" · ");
+}
+
+function ProfileFileWindow({
+  partnerName,
+  initialCategory,
+  onClose,
+  devMock,
+}: {
+  partnerName: string;
+  initialCategory: PartnerFileCategory;
+  onClose: () => void;
+  /** 개발용: 백엔드 호출 없이 프로필 카드를 목업 데이터로 바로 보여줄 때만 사용. */
+  devMock?: { cards: ProfileCardData[]; records: RecordEntry[] };
+}) {
+  const [activeTab, setActiveTab] = useState<PartnerFileCategory>(initialCategory);
+  const [cards, setCards] = useState<ProfileCardData[]>(devMock?.cards ?? []);
+  const [records, setRecords] = useState<RecordEntry[]>(devMock?.records ?? []);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<ProfileCardData | null>(null);
+  const tabsDrag = useRef({
+    active: false,
+    moved: false,
+    startX: 0,
+    startScrollLeft: 0,
+    // 최근 이동 샘플(최대 ~80ms 분량)을 모아뒀다가 놓는 순간의 "직전 한 프레임"이
+    // 아니라 최근 구간 전체의 평균 속도로 관성을 계산한다. 큰 폭으로 빠르게 밀 때
+    // 손을 떼기 직전 자연히 감속되는 마지막 프레임만 보면 속도가 거의 0으로 잡혀
+    // 관성이 안 붙고 뚝 끊기는 것처럼 보이기 때문.
+    samples: [] as { x: number; t: number }[],
+    rafId: 0,
+  });
+
+  function stopTabsMomentum() {
+    if (tabsDrag.current.rafId) {
+      cancelAnimationFrame(tabsDrag.current.rafId);
+      tabsDrag.current.rafId = 0;
+    }
+  }
+
+  function runTabsMomentum(el: HTMLDivElement, velocity: number) {
+    let v = velocity; // px per ms
+    let lastTs = performance.now();
+    function step(ts: number) {
+      const dt = ts - lastTs;
+      lastTs = ts;
+      v *= Math.pow(0.94, dt / 16.7);
+      el.scrollLeft -= v * dt;
+      if (Math.abs(v) > 0.02) {
+        tabsDrag.current.rafId = requestAnimationFrame(step);
+      } else {
+        tabsDrag.current.rafId = 0;
+      }
+    }
+    tabsDrag.current.rafId = requestAnimationFrame(step);
+  }
+  const [editingContent, setEditingContent] = useState("");
+
+  useEffect(() => {
+    if (devMock) return;
+    let cancelled = false;
+    Promise.all([listProfileCards(), listRecords()])
+      .then(([cardData, recordData]) => {
+        if (cancelled) return;
+        setCards(cardData.cards);
+        setRecords(recordData.records);
+      })
+      .catch((error) => {
+        if (!cancelled) setLoadError(describeApiError(error));
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [devMock]);
+
+  useEffect(() => stopTabsMomentum, []);
+
+  const recordBadgeMap = buildRecordBadgeMap(records);
+  const cardsInTab = cards.filter((card) => card.category === activeTab);
+  const categoryBadgeMap = buildCategoryBadgeMap(cardsInTab);
+  const sortedCards = [...cardsInTab].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+
+  function toggleExpand(id: string) {
+    setEditingId(null);
+    setExpandedId((current) => (current === id ? null : id));
+  }
+
+  function startEdit(card: ProfileCardData) {
+    setEditingId(card.id);
+    setEditingContent(card.content);
+  }
+
+  async function saveEdit(card: ProfileCardData) {
+    const content = editingContent.trim();
+    if (!content) return;
+    setActionError(null);
+    if (devMock) {
+      setCards((current) => current.map((item) => (item.id === card.id ? { ...item, content, updatedAt: new Date().toISOString() } : item)));
+      setEditingId(null);
+      return;
+    }
+    try {
+      const { card: updated } = await updateProfileCard(card.id, { content });
+      setCards((current) => current.map((item) => (item.id === card.id ? updated : item)));
+      setEditingId(null);
+    } catch (error) {
+      setActionError(describeApiError(error));
+    }
+  }
+
+  async function removeCard(card: ProfileCardData) {
+    setActionError(null);
+    if (!devMock) {
+      try {
+        await deleteProfileCard(card.id);
+      } catch (error) {
+        setActionError(describeApiError(error));
+        return;
+      }
+    }
+    setCards((current) => current.filter((item) => item.id !== card.id));
+    setExpandedId((current) => (current === card.id ? null : current));
+    setEditingId((current) => (current === card.id ? null : current));
+  }
+
+  async function confirmRemoveCard() {
+    if (!deleteTarget) return;
+    const card = deleteTarget;
+    setDeleteTarget(null);
+    await removeCard(card);
+  }
+
+  return (
+    <>
+      <div className="fixed inset-0 bg-[#111] opacity-80 z-20 cursor-pointer" onClick={onClose} aria-hidden="true" />
+      <div
+        className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-[21] w-[358px] max-w-[calc(100%-32px)] h-[456px] max-h-[calc(100%-64px)] flex flex-col bg-[#d8dee9] border-2 border-white shadow-[2px_2px_0px_0px_rgba(17,17,17,0.2)] overflow-hidden"
+        role="dialog"
+        aria-modal="true"
+        aria-label="연인 파일"
+      >
+        <div className={TITLE_BAR}>
+          <p>{`${partnerName} file.exe - [zip]`}</p>
+          <div className="flex items-center gap-0.5">
+            <span className={WINDOW_BTN} aria-hidden="true">
+              <img src="/home/win-btn-1.svg" alt="" width={10} height={10} />
+            </span>
+            <img src="/home/win-btn-2.svg" alt="" width={16} height={16} className="shrink-0" aria-hidden="true" />
+            <button type="button" className={WINDOW_BTN} onClick={onClose} aria-label="팝업 닫기">
+              <img src="/home/win-btn-3.svg" alt="" width={10} height={10} />
+            </button>
+          </div>
+        </div>
+
+        <div
+          className="flex items-stretch overflow-x-auto border-b border-[#191f28] bg-white shrink-0 min-w-0 w-full cursor-grab active:cursor-grabbing select-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          onWheel={(event) => {
+            // 마우스 휠(세로 스크롤)만 있는 데스크톱에서도 탭을 가로로 넘길 수 있게 한다.
+            if (event.deltaY !== 0 && event.deltaX === 0) {
+              event.currentTarget.scrollLeft += event.deltaY;
+            }
+          }}
+          onMouseDown={(event) => {
+            stopTabsMomentum();
+            const now = performance.now();
+            tabsDrag.current = {
+              active: true,
+              moved: false,
+              startX: event.pageX,
+              startScrollLeft: event.currentTarget.scrollLeft,
+              samples: [{ x: event.pageX, t: now }],
+              rafId: 0,
+            };
+          }}
+          onMouseMove={(event) => {
+            if (!tabsDrag.current.active) return;
+            const delta = event.pageX - tabsDrag.current.startX;
+            if (Math.abs(delta) > 3) tabsDrag.current.moved = true;
+            event.currentTarget.scrollLeft = tabsDrag.current.startScrollLeft - delta;
+
+            const now = performance.now();
+            const samples = tabsDrag.current.samples;
+            samples.push({ x: event.pageX, t: now });
+            while (samples.length > 1 && now - samples[0].t > 80) samples.shift();
+          }}
+          onMouseUp={(event) => {
+            if (tabsDrag.current.active && tabsDrag.current.moved) {
+              const samples = tabsDrag.current.samples;
+              const first = samples[0];
+              const last = samples[samples.length - 1];
+              const dt = last.t - first.t;
+              const velocity = dt > 0 ? (last.x - first.x) / dt : 0;
+              runTabsMomentum(event.currentTarget, velocity);
+            }
+            tabsDrag.current.active = false;
+          }}
+          onMouseLeave={(event) => {
+            if (tabsDrag.current.active && tabsDrag.current.moved) {
+              const samples = tabsDrag.current.samples;
+              const first = samples[0];
+              const last = samples[samples.length - 1];
+              const dt = last.t - first.t;
+              const velocity = dt > 0 ? (last.x - first.x) / dt : 0;
+              runTabsMomentum(event.currentTarget, velocity);
+            }
+            tabsDrag.current.active = false;
+          }}
+          onClickCapture={(event) => {
+            // 드래그로 스크롤한 직후에는 그 클릭이 탭 전환으로 이어지지 않게 막는다.
+            if (tabsDrag.current.moved) {
+              event.preventDefault();
+              event.stopPropagation();
+              tabsDrag.current.moved = false;
+            }
+          }}
+        >
+          {PARTNER_FILE_CATEGORIES.map((item) => {
+            const isActive = item.id === activeTab;
+            return (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => {
+                  setActiveTab(item.id);
+                  setExpandedId(null);
+                  setEditingId(null);
+                }}
+                className={`flex items-center gap-1.5 px-2 py-2 border-r border-[#4e5968] shrink-0 font-pixel text-xs tracking-[0.3px] whitespace-nowrap cursor-pointer ${
+                  isActive ? "bg-[#333d4b]" : "bg-[#d8dee9] text-[#191f28]"
+                }`}
+                // globals.css의 `button { color: inherit }`가 unlayered라 Tailwind
+                // 유틸리티 클래스보다 우선순위가 높아 class로는 덮어쓸 수 없다(같은 이유로
+                // .miniuButton도 font-family를 별도 지정함). inline style로 강제 적용.
+                style={isActive ? { color: "var(--color-common-100)" } : undefined}
+              >
+                <img src="/minimi/file-tab-icon.svg" alt="" width={12} height={11} aria-hidden="true" />
+                {item.label}
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="flex-1 overflow-y-auto bg-white">
+          {loadError ? <p className="p-3 font-pixel text-xs text-[#db2777]">{loadError}</p> : null}
+          {!loadError && sortedCards.length === 0 ? (
+            <p className="p-8 text-center font-pixel text-xs text-[#8b95a1]">아직 저장된 정보가 없어요</p>
+          ) : null}
+          {sortedCards.map((card) => {
+            const isExpanded = expandedId === card.id;
+            const isEditing = editingId === card.id;
+            return (
+              <div key={card.id} className={`border-b border-dashed border-[#b0b8c1] px-2 py-2.5 ${isExpanded ? "bg-[#c9cfda]" : ""}`}>
+                <div className="flex items-center gap-4">
+                  <div className="flex-1 min-w-0 flex flex-col gap-0.5">
+                    <div className="flex items-center gap-1.5">
+                      <span className="shrink-0 px-[5px] py-px bg-[#fce7f3] border border-[#f9a8d4] font-pixel text-[10px] text-[#db2777]">
+                        {categoryBadgeMap.get(card.id)}
+                      </span>
+                      <span className="font-pixel text-xs text-[#6b7684] tracking-[0.3px]">{formatUpdateDate(card.updatedAt)}</span>
+                    </div>
+                    {isEditing ? (
+                      <textarea
+                        className="w-full mt-1 font-pixel text-sm text-[#191f28] tracking-[0.196px] border-2 border-[#2b1f28] p-1 resize-none"
+                        rows={2}
+                        value={editingContent}
+                        onChange={(event) => setEditingContent(event.target.value)}
+                        aria-label="프로필 카드 내용 수정"
+                      />
+                    ) : (
+                      <p className="m-0 font-pixel text-sm text-[#191f28] tracking-[0.196px]">{card.content}</p>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    className="shrink-0 m-0 p-0 border-none bg-transparent font-pixel text-[10px] cursor-pointer"
+                    style={{ color: "var(--color-border-primary)" }}
+                    onClick={() => toggleExpand(card.id)}
+                    aria-label={isExpanded ? "접기" : "펼치기"}
+                  >
+                    <span className={`inline-block ${isExpanded ? "rotate-180" : ""}`}>▼</span>
+                  </button>
+                </div>
+                {isExpanded ? (
+                  <div className="mt-2 flex items-center justify-between gap-2 font-pixel text-sm tracking-[0.196px]">
+                    <span className="flex-1 min-w-0 truncate text-[#6b7684]">{buildRefLabel(card, recordBadgeMap) ?? "직접 관리 중"}</span>
+                    <div className="flex items-center gap-3 shrink-0">
+                      {isEditing ? (
+                        <>
+                          {/* globals.css의 `button { color: inherit }`가 unlayered라 Tailwind
+                              text-color 유틸리티보다 우선순위가 높아 class로는 덮어쓸 수 없다
+                              (탭 active 색상과 동일한 원인) — inline style로 강제 적용. */}
+                          <button type="button" className="m-0 p-0 border-none bg-transparent cursor-pointer" style={{ color: "var(--color-text-quinary)" }} onClick={() => setEditingId(null)}>
+                            취소
+                          </button>
+                          <button type="button" className="m-0 p-0 border-none bg-transparent cursor-pointer" style={{ color: "var(--color-text-tertiary)" }} onClick={() => saveEdit(card)}>
+                            저장
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <button type="button" className="m-0 p-0 border-none bg-transparent cursor-pointer" style={{ color: "var(--color-text-tertiary)" }} onClick={() => startEdit(card)}>
+                            수정
+                          </button>
+                          <button type="button" className="m-0 p-0 border-none bg-transparent cursor-pointer" style={{ color: "var(--color-accent-pink)" }} onClick={() => setDeleteTarget(card)}>
+                            삭제
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            );
+          })}
+          {actionError ? <p className="p-2 font-pixel text-xs text-[#db2777]">{actionError}</p> : null}
+        </div>
+      </div>
+
+      {deleteTarget ? (
+        <>
+          <div className="fixed inset-0 bg-[#111] opacity-80 z-[22] cursor-pointer" onClick={() => setDeleteTarget(null)} aria-hidden="true" />
+          <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-[23] w-[358px] max-w-[calc(100%-32px)]">
+            <ProfileCardDeleteDialog onDelete={confirmRemoveCard} onCancel={() => setDeleteTarget(null)} />
+          </div>
+        </>
+      ) : null}
+    </>
+  );
+}
+
 export function ProfilePreview({
   onNavigate,
   devMock,
 }: {
   onNavigate?: (tab: PreviewTab) => void;
   /** 개발용: 백엔드 호출 없이 연인 정보를 목업 데이터로 바로 보여줄 때만 사용. */
-  devMock?: { partnerName: string; dDay: number | null; summary: string; unreadCount: number };
+  devMock?: { partnerName: string; dDay: number | null; summary: string; unreadCount: number; cards: ProfileCardData[]; records: RecordEntry[] };
 }) {
   const [unreadCount, setUnreadCount] = useState(devMock?.unreadCount ?? 0);
   const [partnerName, setPartnerName] = useState(devMock?.partnerName ?? "연인");
   const [relationshipStartedOn, setRelationshipStartedOn] = useState<string | null>(null);
   const [summary, setSummary] = useState(devMock?.summary ?? "");
   const [selectedCategory, setSelectedCategory] = useState<PartnerFileCategory | null>(null);
+  const [openCategory, setOpenCategory] = useState<PartnerFileCategory | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -71,6 +472,12 @@ export function ProfilePreview({
 
   const dDay = devMock ? devMock.dDay : calcDDay(relationshipStartedOn);
   const displaySummary = summary.slice(0, PARTNER_SUMMARY_MAX_LENGTH);
+
+  function openFile(category: PartnerFileCategory) {
+    setSelectedCategory(category);
+    // 클릭모션(텍스트 색 변경)이 잠깐 보이고 나서 팝업이 뜨도록 지연시킨다.
+    window.setTimeout(() => setOpenCategory(category), 180);
+  }
 
   return (
     <div className="relative flex flex-col min-h-dvh w-full bg-gradient-to-b from-[#7cb6f6] via-[#e9f9ff] to-white text-[#191f28]">
@@ -168,7 +575,7 @@ export function ProfilePreview({
                     key={item.id}
                     type="button"
                     className="flex flex-col items-center gap-1.5 m-0 p-0 border-none bg-transparent cursor-pointer"
-                    onClick={() => setSelectedCategory(item.id)}
+                    onClick={() => openFile(item.id)}
                   >
                     <span className="relative block w-[54px] h-12" aria-hidden="true">
                       <img src="/minimi/folder-back.svg" alt="" className="absolute inset-0 w-full h-full" />
@@ -205,6 +612,15 @@ export function ProfilePreview({
           <p>프로필</p>
         </button>
       </nav>
+
+      {openCategory ? (
+        <ProfileFileWindow
+          partnerName={partnerName}
+          initialCategory={openCategory}
+          onClose={() => setOpenCategory(null)}
+          devMock={devMock ? { cards: devMock.cards, records: devMock.records } : undefined}
+        />
+      ) : null}
     </div>
   );
 }

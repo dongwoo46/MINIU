@@ -12,7 +12,7 @@ import { LetterPreview } from "@/widgets/letter-preview";
 import { ProfilePreview } from "@/widgets/profile-preview";
 import { RecordPreview } from "@/widgets/record-preview";
 import { MobileShell } from "@/widgets/mobile-shell";
-import type { HouseData, ChatQuota, RecordEntry } from "@/shared/api/miniu";
+import type { HouseData, ChatQuota, RecordEntry, ProfileCardData } from "@/shared/api/miniu";
 
 type PublicUser = {
   id: string;
@@ -597,6 +597,11 @@ export default function Home() {
       { id: "dev-r2", userId: "dev-me", content: "최근에 본 영화에 대해 이야기했는데, 지수는 액션 영화보다 드라마를 선호함.", happenedOn: "2025-09-17", analysisStatus: "complete", analysisError: null, createdAt: "2025-09-17T16:00:00.000Z" },
       { id: "dev-r1", userId: "dev-me", content: "이번 여름 여행에서 만난 친구가 일본 음식을 정말 좋아했는데, 초밥은 별로였음.", happenedOn: "2025-09-15", analysisStatus: "complete", analysisError: null, createdAt: "2025-09-15T18:15:00.000Z" },
     ];
+    const mockProfileCards: ProfileCardData[] = [
+      { id: "dev-p1", userId: "dev-me", category: "likes", content: "치즈케이크와 아이스 아메리카노", sources: [{ type: "record", id: "dev-r5" }], mergeCandidateOf: null, userEdited: false, createdAt: "2025-09-15T18:15:00.000Z", updatedAt: "2025-09-20T14:20:00.000Z" },
+      { id: "dev-p2", userId: "dev-me", category: "likes", content: "아침에 커피 들고 산책하기", sources: [{ type: "record", id: "dev-r3" }, { type: "record", id: "dev-r4" }], mergeCandidateOf: null, userEdited: false, createdAt: "2025-09-17T16:00:00.000Z", updatedAt: "2025-09-18T11:45:00.000Z" },
+      { id: "dev-p3", userId: "dev-me", category: "dislikes", content: "민트초코", sources: [{ type: "record", id: "dev-r5" }], mergeCandidateOf: null, userEdited: false, createdAt: "2025-09-20T14:20:00.000Z", updatedAt: "2025-09-20T14:20:00.000Z" },
+    ];
     const devPixelChrome = devTab === "home" || devTab === "record" || devTab === "profile";
     return (
       <MobileShell active={devTab} onTabChange={setDevTab} hideChrome={devPixelChrome}>
@@ -613,7 +618,7 @@ export default function Home() {
         {devTab === "profile" && (
           <ProfilePreview
             onNavigate={setDevTab}
-            devMock={{ partnerName: "지수 미니미", dDay: 324, summary: "놀러다니는 것을 좋아하고, 잘 챙겨주는 연인이에요", unreadCount: 2 }}
+            devMock={{ partnerName: "지수 미니미", dDay: 324, summary: "놀러다니는 것을 좋아하고, 잘 챙겨주는 연인이에요", unreadCount: 2, cards: mockProfileCards, records: mockRecords }}
           />
         )}
       </MobileShell>
