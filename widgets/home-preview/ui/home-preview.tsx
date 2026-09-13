@@ -452,9 +452,9 @@ export function HomePreview({ onNavigate }: { onNavigate?: (tab: PreviewTab) => 
               <div className="relative w-full h-[236px] overflow-hidden border-2 border-[#191f28]">
                 <img className="w-full h-full object-cover object-top" src="/minimi/room-bg.png" alt={`${partnerName}의 방`} />
                 {affectionBubble && (
-                  <div className="absolute left-[17px] top-[7.4px] max-w-[300px] z-[1] bg-white border-2 border-[#2b1f28] drop-shadow-[2px_2px_0px_#2b1f28] px-2 py-1.5">
-                    <p className="m-0 font-pixel text-sm tracking-[0.196px] text-[#191f28]">{affectionBubble}</p>
-                    <span className="absolute left-3 -bottom-[9px] text-[10px] tracking-[0.3px] text-[#2b1f28]" aria-hidden="true">▼</span>
+                  <div className="absolute left-1/2 top-[7.4px] -translate-x-1/2 max-w-[300px] z-[1] bg-white border-2 border-[#2b1f28] drop-shadow-[2px_2px_0px_#2b1f28] px-2 py-1.5">
+                    <p className="m-0 font-pixel text-sm tracking-[0.196px] text-[#191f28] text-center">{affectionBubble}</p>
+                    <span className="absolute left-1/2 -translate-x-1/2 -bottom-[9px] text-[10px] tracking-[0.3px] text-[#2b1f28]" aria-hidden="true">▼</span>
                   </div>
                 )}
                 <div className="absolute left-1/2 bottom-[17.2px] -translate-x-1/2 w-[98px] h-[137px]">
