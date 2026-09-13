@@ -55,6 +55,30 @@
   }
 }
 
+/* 쓰다듬기/안아주기/뽀뽀하기 인터렉션 시 캐릭터 주변에 떠오르는 하트 모션 */
+@keyframes affectionHeartFloat {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 0) scale(0.6);
+  }
+  20% {
+    opacity: 1;
+    transform: translate(-50%, -10px) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -60px) scale(1.1);
+  }
+}
+
+.affection-heart {
+  position: absolute;
+  bottom: 40%;
+  color: #db2777;
+  font-size: 16px;
+  animation: affectionHeartFloat 900ms ease-out forwards;
+}
+
 :root {
   color-scheme: light;
   /* Figma "Color" variable collection (node 135:16092) — primitives, values as registered in Figma */
