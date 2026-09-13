@@ -436,7 +436,7 @@ img, .minimi-avatar { image-rendering: pixelated; }
 .home-case-photo-wrap { width: 100%; box-sizing: border-box; padding: 4px 8px; background: var(--color-gray-quaternary); }
 .home-case-stage { position: relative; height: 236px; border: 2px solid var(--color-text-primary); overflow: hidden; }
 .home-case-garden-bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-.home-case-scene { position: absolute; left: 27px; top: 15px; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.home-case-scene { position: absolute; left: 50%; top: 15px; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 10px; }
 .home-case-bubble { position: relative; display: flex; flex-direction: column; align-items: flex-end; width: 300px; max-width: 300px; padding: 6px 14px; background: var(--color-common-100); border: 2px solid var(--color-border-primary); box-shadow: 2px 2px 0 var(--color-border-primary); }
 .home-case-bubble p { margin: 0; font: normal 400 var(--text-body-m-size)/var(--text-body-m-lh) var(--font-pixel-kr); letter-spacing: var(--text-body-m-ls); color: #111; text-align: center; width: 100%; }
 .home-case-bubble-tail { font-size: 10px; letter-spacing: 0.3px; color: #111; }

@@ -88,10 +88,17 @@ function AttributePicker({ label, options, value, onChange }: { label: string; o
   );
 }
 
-export function HomePreview({ onNavigate }: { onNavigate?: (tab: PreviewTab) => void }) {
-  const [house, setHouse] = useState<HouseData | null>(null);
-  const [quota, setQuota] = useState<ChatQuota | null>(null);
-  const [unreadCount, setUnreadCount] = useState(0);
+export function HomePreview({
+  onNavigate,
+  devMock,
+}: {
+  onNavigate?: (tab: PreviewTab) => void;
+  /** 개발용: 백엔드 호출 없이 완료 상태(로그인+커플 연결+미니미 생성)를 바로 보여줄 때만 사용. */
+  devMock?: { house: HouseData; quota: ChatQuota; unreadCount: number; relationshipStartedOn: string | null };
+}) {
+  const [house, setHouse] = useState<HouseData | null>(devMock?.house ?? null);
+  const [quota, setQuota] = useState<ChatQuota | null>(devMock?.quota ?? null);
+  const [unreadCount, setUnreadCount] = useState(devMock?.unreadCount ?? 0);
   const [message, setMessage] = useState("");
   const [isMessageFocused, setIsMessageFocused] = useState(false);
   const [miniuName, setMiniuName] = useState("");
@@ -105,7 +112,7 @@ export function HomePreview({ onNavigate }: { onNavigate?: (tab: PreviewTab) => 
   const [status, setStatus] = useState("");
   const [pending, setPending] = useState(false);
   const [showHousePopup, setShowHousePopup] = useState(false);
-  const [relationshipStartedOn, setRelationshipStartedOn] = useState<string | null>(null);
+  const [relationshipStartedOn, setRelationshipStartedOn] = useState<string | null>(devMock?.relationshipStartedOn ?? null);
   const [isMessageOverflowing, setIsMessageOverflowing] = useState(false);
   const [thumbStyle, setThumbStyle] = useState({ top: 0, height: 24 });
   const [inputBoxHeight, setInputBoxHeight] = useState(42);
@@ -133,6 +140,7 @@ export function HomePreview({ onNavigate }: { onNavigate?: (tab: PreviewTab) => 
   }
 
   useEffect(() => {
+    if (devMock) return;
     let cancelled = false;
     Promise.all([getHouse(), getChatQuota(), listNotifications(), getPreQuestions().catch(() => ({ preQuestions: null }))])
       .then(([houseData, quotaData, notificationData, preQuestionsData]) => {
@@ -184,6 +192,12 @@ export function HomePreview({ onNavigate }: { onNavigate?: (tab: PreviewTab) => 
     setPending(true);
     setStatus("");
     try {
+      if (devMock) {
+        setReply(`(dev 미리보기) "${trimmed}" 잘 받았어!`);
+        setQuota((current) => current ? { ...current, used: current.used + 1, remaining: Math.max(0, current.remaining - 1) } : current);
+        setMessage("");
+        return;
+      }
       const data = await sendChatMessage(trimmed);
       setReply(data.reply);
       setQuota(data.usage);
@@ -199,7 +213,9 @@ export function HomePreview({ onNavigate }: { onNavigate?: (tab: PreviewTab) => 
     setPending(true);
     setStatus("");
     try {
-      await sendAffection(affectionType);
+      if (!devMock) {
+        await sendAffection(affectionType);
+      }
       setStatus("마음을 보냈어요.");
       setAffectionBubble(pickAffectionPhrase(affectionType, affectionBubble));
       setAffectionEffectKey((key) => key + 1);
