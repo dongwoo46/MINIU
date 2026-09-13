@@ -17,6 +17,15 @@
   src: url('/fonts/silkscreen/Silkscreen-Bold.woff2') format('woff2');
 }
 
+/* DungGeunMo (한글 픽셀 폰트, self-hosted from public/fonts/dunggeunmo — see README there) */
+@font-face {
+  font-family: 'DungGeunMo';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/dunggeunmo/DungGeunMo.woff2') format('woff2');
+}
+
 @theme {
   --color-miniu-bg: var(--bg-base);
   --color-miniu-sunken: var(--bg-sunken);
@@ -30,7 +39,7 @@
   --font-miniu-body: var(--font-body);
   --radius-miniu: var(--radius);
   --shadow-miniu: var(--shadow);
-  /* app/minimi (예은 UI 프로토타입) 픽셀 폰트 토큰 */
+  /* app/minimi (예은 UI 프로토타입) 픽셀 폰트 토큰 — DungGeunMo 자체 호스팅, public/fonts/dunggeunmo/README 참고 */
   --font-pixel: "DungGeunMo", monospace;
 }
 
@@ -76,7 +85,7 @@
   /* Figma 디자인 시스템 (node 97:11467, "🎨 Typography" · "🎨 Spacing") — 확정된 타입 스케일/스페이싱.
      spacing/xs·md·lg·xl·xxl(4/8/16/24/32)는 기존 --space-*와 값이 이미 일치, sm(6)만 신규 추가.
      border/radius 규칙: 두꺼운 2px 잉크 테두리 + 각진 모서리(radius 0)를 위 --border-width/--radius에 반영함. */
-  --font-pixel-kr: 'DungGeunMo', var(--font-ui); /* 한글 픽셀 폰트 woff2 라이선스 미확보 — 시스템 폰트로 폴백 중 */
+  --font-pixel-kr: 'DungGeunMo', var(--font-ui); /* public/fonts/dunggeunmo/에 자체 호스팅된 폰트, 위 @font-face 참고 */
   --font-pixel-en: 'Silkscreen', var(--font-ui); /* public/fonts/silkscreen/에 자체 호스팅된 OFL 폰트, 위 @font-face 참고 */
   --text-display-l-size: 40px; --text-display-l-lh: 130%; --text-display-l-ls: -0.025em;
   --text-display-m-size: 36px; --text-display-m-lh: 130%; --text-display-m-ls: -0.025em;
