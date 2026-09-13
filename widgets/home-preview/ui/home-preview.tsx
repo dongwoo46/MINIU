@@ -95,12 +95,16 @@ export function HomePreview({ onNavigate }: { onNavigate?: (tab: PreviewTab) => 
   const [relationshipStartedOn, setRelationshipStartedOn] = useState<string | null>(null);
   const [isMessageOverflowing, setIsMessageOverflowing] = useState(false);
   const [thumbStyle, setThumbStyle] = useState({ top: 0, height: 24 });
+  const [inputBoxHeight, setInputBoxHeight] = useState(42);
   const messageRef = useRef<HTMLTextAreaElement>(null);
   const messageTrackRef = useRef<HTMLDivElement>(null);
   const MIN_THUMB_HEIGHT = 24;
-  // 1줄(콘텐츠 20px)까지는 그대로, 2줄(콘텐츠 40px)부터는 박스를 더 키우지 않고 스크롤한다.
-  const INPUT_MIN_CONTENT_HEIGHT = 20;
-  const INPUT_MAX_CONTENT_HEIGHT = 40;
+  // 박스 padding(위 10 + 아래 10) + border(위아래 2px씩) = 24px.
+  // 기본(1줄) 박스 높이는 Send 버튼과 맞춘 42px, 2줄부터는 박스가 늘어나며(3줄부터는
+  // 더 늘어나지 않고 스크롤) Send 버튼도 같은 높이로 함께 커진다.
+  const INPUT_BOX_PADDING_BORDER = 24;
+  const INPUT_MIN_CONTENT_HEIGHT = 42 - INPUT_BOX_PADDING_BORDER;
+  const INPUT_MAX_CONTENT_HEIGHT = INPUT_MIN_CONTENT_HEIGHT * 2;
 
   function updateThumbPosition() {
     const el = messageRef.current;
@@ -141,6 +145,7 @@ export function HomePreview({ onNavigate }: { onNavigate?: (tab: PreviewTab) => 
     const naturalHeight = el.scrollHeight;
     const nextHeight = Math.min(Math.max(naturalHeight, INPUT_MIN_CONTENT_HEIGHT), INPUT_MAX_CONTENT_HEIGHT);
     el.style.height = `${nextHeight}px`;
+    setInputBoxHeight(nextHeight + INPUT_BOX_PADDING_BORDER);
     const overflowing = naturalHeight > INPUT_MAX_CONTENT_HEIGHT;
     setIsMessageOverflowing(overflowing);
     if (overflowing) updateThumbPosition();
@@ -343,7 +348,8 @@ export function HomePreview({ onNavigate }: { onNavigate?: (tab: PreviewTab) => 
                 <button
                   type="submit"
                   disabled={pending || !message.trim() || chatExhausted}
-                  className="flex h-[42px] shrink-0 items-center gap-0.5 px-3 py-2 border-2 border-[#2b1f28] bg-gradient-to-b from-white via-[#accef3] to-[#7cb6f6] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed [&_p]:m-0 [&_p]:font-['Silkscreen',monospace] [&_p]:font-bold [&_p]:text-xs [&_p]:text-[#191f28]"
+                  style={{ height: `${inputBoxHeight}px` }}
+                  className="flex shrink-0 items-center gap-0.5 px-3 py-2 border-2 border-[#2b1f28] bg-gradient-to-b from-white via-[#accef3] to-[#7cb6f6] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed [&_p]:m-0 [&_p]:font-['Silkscreen',monospace] [&_p]:font-bold [&_p]:text-xs [&_p]:text-[#191f28]"
                 >
                   <p>Send</p>
                   <p className="text-[10px]! font-normal!">▼</p>
