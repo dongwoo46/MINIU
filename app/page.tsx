@@ -12,7 +12,7 @@ import { LetterPreview } from "@/widgets/letter-preview";
 import { ProfilePreview } from "@/widgets/profile-preview";
 import { RecordPreview } from "@/widgets/record-preview";
 import { MobileShell } from "@/widgets/mobile-shell";
-import type { HouseData, ChatQuota } from "@/shared/api/miniu";
+import type { HouseData, ChatQuota, RecordEntry } from "@/shared/api/miniu";
 
 type PublicUser = {
   id: string;
@@ -215,6 +215,7 @@ export default function Home() {
   const [emailVerifySeconds, setEmailVerifySeconds] = useState(EMAIL_CODE_SECONDS);
   const [me, setMe] = useState<MeData | null>(null);
   const [devHomePreview, setDevHomePreview] = useState(false);
+  const [devTab, setDevTab] = useState<PreviewTab>("home");
   const [showCoupleJustConnectedPopup, setShowCoupleJustConnectedPopup] = useState(false);
   const [pending, setPending] = useState(false);
   const [invitation, setInvitation] = useState<PublicInvitation | null>(null);
@@ -589,12 +590,27 @@ export default function Home() {
       locks: { canVisit: true, canCustomizeMiniu: true, canUseInventory: true, needsMiniu: false },
     };
     const mockQuota: ChatQuota = { limit: 20, used: 3, remaining: 17, resetsAt: now };
+    const mockRecords: RecordEntry[] = [
+      { id: "dev-r5", userId: "dev-me", content: "오늘 같이 걷다가 알았는데, 지수는 민트초코를 극도로 싫어하고 치즈케이크를 제일 좋아함.", happenedOn: "2025-09-20", analysisStatus: "complete", analysisError: null, createdAt: "2025-09-20T14:20:00.000Z" },
+      { id: "dev-r4", userId: "dev-me", content: "어제는 비 오는 날이라서 카페에서 오랜만에 만났는데, 지수는 여전히 커피보다 차를 더 좋아함.", happenedOn: "2025-09-19", analysisStatus: "complete", analysisError: null, createdAt: "2025-09-19T09:30:00.000Z" },
+      { id: "dev-r3", userId: "dev-me", content: "지난 주말에는 친구들과 바베큐를 했는데, 지수는 고기를 좋아하지만 야채는 싫어함.", happenedOn: "2025-09-18", analysisStatus: "complete", analysisError: null, createdAt: "2025-09-18T11:45:00.000Z" },
+      { id: "dev-r2", userId: "dev-me", content: "최근에 본 영화에 대해 이야기했는데, 지수는 액션 영화보다 드라마를 선호함.", happenedOn: "2025-09-17", analysisStatus: "complete", analysisError: null, createdAt: "2025-09-17T16:00:00.000Z" },
+      { id: "dev-r1", userId: "dev-me", content: "이번 여름 여행에서 만난 친구가 일본 음식을 정말 좋아했는데, 초밥은 별로였음.", happenedOn: "2025-09-15", analysisStatus: "complete", analysisError: null, createdAt: "2025-09-15T18:15:00.000Z" },
+    ];
+    const devPixelChrome = devTab === "home" || devTab === "record";
     return (
-      <MobileShell active="home" onTabChange={() => {}} hideChrome>
-        <HomePreview
-          onNavigate={() => {}}
-          devMock={{ house: mockHouse, quota: mockQuota, unreadCount: 2, relationshipStartedOn: "2025-01-01" }}
-        />
+      <MobileShell active={devTab} onTabChange={setDevTab} hideChrome={devPixelChrome}>
+        {devTab === "home" && (
+          <HomePreview
+            onNavigate={setDevTab}
+            devMock={{ house: mockHouse, quota: mockQuota, unreadCount: 2, relationshipStartedOn: "2025-01-01" }}
+          />
+        )}
+        {devTab === "record" && (
+          <RecordPreview onNavigate={setDevTab} devMock={{ records: mockRecords, unreadCount: 2, partnerName: "연인 미니미" }} />
+        )}
+        {devTab === "letter" && <LetterPreview />}
+        {devTab === "profile" && <ProfilePreview onAddRecord={() => setDevTab("record")} />}
       </MobileShell>
     );
   }

@@ -6,7 +6,9 @@ import {
   MiniuApiError,
   createRecord,
   deleteRecord,
+  getHouse,
   listMergeCandidates,
+  listNotifications,
   listRecords,
   mergeProfileCard,
   rejectMergeCandidate,
@@ -14,7 +16,7 @@ import {
   type RecordEntry,
 } from "@/shared/api/miniu";
 import { ButtonPrimary } from "@/shared/ui/pixel-button";
-import { Window01 } from "@/shared/ui/dialog-window";
+import { DeleteConfirmDialog, Window01 } from "@/shared/ui/dialog-window";
 
 const MAX_NOTE_LENGTH = 150;
 
@@ -56,13 +58,24 @@ function describeApiError(error: unknown): string {
   return "잠시 후 다시 시도해 주세요.";
 }
 
-export function RecordPreview({ onNavigate }: { onNavigate?: (tab: PreviewTab) => void }) {
-  const [records, setRecords] = useState<RecordEntry[]>([]);
+export function RecordPreview({
+  onNavigate,
+  devMock,
+}: {
+  onNavigate?: (tab: PreviewTab) => void;
+  /** 개발용: 백엔드 호출 없이 기록 목록을 목업 데이터로 바로 보여줄 때만 사용. */
+  devMock?: { records: RecordEntry[]; unreadCount: number; partnerName?: string };
+}) {
+  const [records, setRecords] = useState<RecordEntry[]>(devMock?.records ?? []);
+  const [unreadCount, setUnreadCount] = useState(devMock?.unreadCount ?? 0);
+  const [partnerName, setPartnerName] = useState(devMock?.partnerName ?? "연인");
   const [loadError, setLoadError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [sortOrder, setSortOrder] = useState<"latest" | "oldest">("latest");
   const [isWriteOpen, setIsWriteOpen] = useState(false);
   const [mergeCandidate, setMergeCandidate] = useState<ProfileMergeCandidate | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<RecordEntry | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -74,6 +87,7 @@ export function RecordPreview({ onNavigate }: { onNavigate?: (tab: PreviewTab) =
   }, [draft, isWriteOpen]);
 
   useEffect(() => {
+    if (devMock) return;
     let cancelled = false;
     listRecords()
       .then(({ records }) => {
@@ -82,12 +96,29 @@ export function RecordPreview({ onNavigate }: { onNavigate?: (tab: PreviewTab) =
       .catch((error) => {
         if (!cancelled) setLoadError(describeApiError(error));
       });
+    listNotifications()
+      .then((data) => {
+        if (!cancelled) setUnreadCount(data.unreadCount);
+      })
+      .catch(() => {});
+    getHouse()
+      .then((house) => {
+        if (!cancelled && house.partner.miniu) setPartnerName(house.partner.miniu.name);
+      })
+      .catch(() => {});
     return () => {
       cancelled = true;
     };
   }, []);
 
   const badgeByRecordId = useMemo(() => buildBadgeMap(records), [records]);
+
+  // 병합 후보 프로필 카드가 어떤 기록에서 만들어졌는지 찾아 "file 15" 같은 배지로 보여준다.
+  function refLabelForCard(card: ProfileMergeCandidate["targetCard"]): string {
+    const recordSource = card?.sources.find((source) => source.type === "record");
+    const badge = recordSource ? badgeByRecordId.get(recordSource.id) : undefined;
+    return `Ref. ${badge ?? card?.content ?? ""}`;
+  }
 
   const sortedRecords = useMemo(() => {
     const sorted = [...records].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
@@ -100,12 +131,26 @@ export function RecordPreview({ onNavigate }: { onNavigate?: (tab: PreviewTab) =
   async function handleDelete(id: string) {
     const prev = records;
     setRecords((current) => current.filter((record) => record.id !== id));
+    if (devMock) return;
     try {
       await deleteRecord(id);
     } catch (error) {
       setRecords(prev);
       setLoadError(describeApiError(error));
     }
+  }
+
+  function requestDelete(record: RecordEntry) {
+    setDeleteTarget(record);
+  }
+
+  async function confirmDelete() {
+    if (!deleteTarget) return;
+    const id = deleteTarget.id;
+    setDeleteTarget(null);
+    await handleDelete(id);
+    setNotice("기록이 삭제됐어요.");
+    window.setTimeout(() => setNotice((current) => (current === "기록이 삭제됐어요." ? null : current)), 2500);
   }
 
   function handleToggleSort() {
@@ -126,6 +171,13 @@ export function RecordPreview({ onNavigate }: { onNavigate?: (tab: PreviewTab) =
     if (!canSubmit) return;
     const content = draft.trim();
     setSubmitError(null);
+    if (devMock) {
+      const now = new Date().toISOString();
+      setRecords((prev) => [{ id: `dev-${now}`, userId: "dev-me", content, happenedOn: toDateInputValue(new Date()), analysisStatus: "complete", analysisError: null, createdAt: now }, ...prev]);
+      setDraft("");
+      setIsWriteOpen(false);
+      return;
+    }
     try {
       const { record } = await createRecord({ content, happenedOn: toDateInputValue(new Date()) });
       // 기록탭에는 유사 여부와 상관없이 항상 기록된다. 병합 여부는
@@ -175,7 +227,36 @@ export function RecordPreview({ onNavigate }: { onNavigate?: (tab: PreviewTab) =
       </div>
 
       <div className="relative flex items-center justify-between h-[59px] px-4">
-        <p className="m-0 font-pixel text-[28px] text-white tracking-[-0.5px] leading-none whitespace-nowrap">MINIU</p>
+        <p className="m-0 font-pixel text-[36px] text-white tracking-[-0.72px] leading-none whitespace-nowrap">MINIU</p>
+        <div className="flex items-center gap-2">
+          <div className="relative w-9 h-9" aria-hidden="true">
+            <span className="absolute bg-white left-[14.5px] right-[14.5px] top-[6.33px] bottom-[27.33px]" />
+            <span className="absolute bg-white left-[12.17px] right-[21.5px] top-[8.67px] bottom-[25px]" />
+            <span className="absolute bg-white left-[21.5px] right-[12.17px] top-[8.67px] bottom-[25px]" />
+            <span className="absolute bg-white left-[9.83px] right-[23.83px] top-[11px] bottom-[16.83px]" />
+            <span className="absolute bg-white left-[23.83px] right-[9.83px] top-[11px] bottom-[16.83px]" />
+            <span className="absolute bg-white left-[7.5px] right-[26.17px] top-[19.17px] bottom-[12.17px]" />
+            <span className="absolute bg-white left-[26.17px] right-[7.5px] top-[19.17px] bottom-[12.17px]" />
+            <span className="absolute bg-white left-[7.5px] right-[7.5px] top-[21.5px] bottom-[12.17px]" />
+            <span className="absolute bg-white left-[13.33px] right-[20.33px] top-[25px] bottom-[8.67px]" />
+            <span className="absolute bg-white left-[20.33px] right-[13.33px] top-[25px] bottom-[8.67px]" />
+            <span className="absolute bg-white left-[13.33px] right-[13.33px] top-[27.33px] bottom-[6.33px]" />
+            {unreadCount > 0 && <span className="absolute -top-1 -right-1 font-pixel text-[9px] text-white bg-[#db2777] border border-white px-1">{unreadCount}</span>}
+          </div>
+          <div className="relative w-9 h-9" aria-hidden="true">
+            <div className="absolute left-[1.93px] top-[1.93px] w-[32.143px] h-[32.143px] overflow-hidden">
+              <img className="absolute left-[-83.33%] top-[-71.46%] w-[268%] h-[244.92%] max-w-none" src="/minimi/gear-icon.png" alt="" />
+            </div>
+            <span className="absolute bg-white left-[13.19px] top-[16.36px] w-[1.957px] h-[3.842px]" />
+            <span className="absolute bg-white left-[21.25px] top-[16.36px] w-[1.957px] h-[3.842px]" />
+            <span className="absolute bg-white left-[16.44px] top-[13.25px] w-[3.601px] h-[1.957px]" />
+            <span className="absolute bg-white left-[19.98px] top-[14.83px] w-[1.531px] h-[1.529px]" />
+            <span className="absolute bg-white left-[19.98px] top-[20.1px] w-[1.531px] h-[1.529px]" />
+            <span className="absolute bg-white left-[14.91px] top-[20.1px] w-[1.531px] h-[1.529px]" />
+            <span className="absolute bg-white left-[14.91px] top-[14.83px] w-[1.531px] h-[1.529px]" />
+            <span className="absolute bg-white left-[16.44px] top-[21.39px] w-[3.601px] h-[1.957px]" />
+          </div>
+        </div>
       </div>
 
       <div className="relative flex items-center justify-between h-[21px] mt-2 mx-4 font-pixel text-sm text-[#191f28]">
@@ -184,10 +265,12 @@ export function RecordPreview({ onNavigate }: { onNavigate?: (tab: PreviewTab) =
         </p>
         <button type="button" className="flex items-center gap-1 m-0 p-0 border-none bg-transparent font-pixel text-sm text-[#191f28] cursor-pointer" onClick={handleToggleSort}>
           <span>{sortOrder === "latest" ? "최신순" : "오래된순"}</span>
+          <img src="/minimi/sort-icon.svg" alt="" width={16} height={16} aria-hidden="true" />
         </button>
       </div>
 
       {loadError ? <p className="relative mx-4 mt-2 font-pixel text-xs text-[#db2777]">{loadError}</p> : null}
+      {notice ? <p className="relative mx-4 mt-2 px-2 py-1 bg-[#fce7f3] border border-[#f9a8d4] font-pixel text-xs text-[#191f28] text-center">{notice}</p> : null}
 
       <div className="relative flex-1 flex flex-col gap-2 mt-3 mx-4 pb-[220px]">
         {sortedRecords.map((record) => (
@@ -198,7 +281,7 @@ export function RecordPreview({ onNavigate }: { onNavigate?: (tab: PreviewTab) =
               </span>
               <div className="flex-1 min-w-0 flex items-center justify-between font-pixel text-xs tracking-[0.3px] text-[#8b95a1]">
                 <span>{formatDisplayDate(record.createdAt)}</span>
-                <button type="button" className="m-0 p-0 border-none bg-transparent font-pixel text-xs text-[#8b95a1] cursor-pointer" onClick={() => handleDelete(record.id)}>
+                <button type="button" className="m-0 p-0 border-none bg-transparent font-pixel text-xs text-[#8b95a1] cursor-pointer" onClick={() => requestDelete(record)}>
                   삭제
                 </button>
               </div>
@@ -215,7 +298,7 @@ export function RecordPreview({ onNavigate }: { onNavigate?: (tab: PreviewTab) =
         <ButtonPrimary label="기록하기" onClick={handleOpenWrite} />
 
         <nav className="flex items-center gap-[10px] w-full mt-2">
-          <button type="button" className={NAV_ITEM} onClick={() => onNavigate?.("home")}>
+          <button type="button" className={`${NAV_ITEM} opacity-60`} onClick={() => onNavigate?.("home")}>
             <img src="/minimi/nav-home.png" alt="" aria-hidden="true" />
             <p>홈</p>
           </button>
@@ -245,11 +328,14 @@ export function RecordPreview({ onNavigate }: { onNavigate?: (tab: PreviewTab) =
             aria-label="기록 작성"
           >
             <div className={TITLE_BAR}>
-              <p>{`miniu note.exe - [file ${String(nextFileNumber).padStart(2, "0")}]`}</p>
+              <p>{`${partnerName} note.exe - [file ${String(nextFileNumber).padStart(2, "0")}]`}</p>
               <div className="flex items-center gap-0.5">
-                <span className={WINDOW_BTN} aria-hidden="true"><span className="w-2 h-2 border-[1.5px] border-[#111] box-border" /></span>
+                <span className={WINDOW_BTN} aria-hidden="true">
+                  <img src="/home/win-btn-1.svg" alt="" width={10} height={10} />
+                </span>
+                <img src="/home/win-btn-2.svg" alt="" width={16} height={16} className="shrink-0" aria-hidden="true" />
                 <button type="button" className={WINDOW_BTN} onClick={handleCloseWrite} aria-label="팝업 닫기">
-                  ×
+                  <img src="/home/win-btn-3.svg" alt="" width={10} height={10} />
                 </button>
               </div>
             </div>
@@ -272,7 +358,7 @@ export function RecordPreview({ onNavigate }: { onNavigate?: (tab: PreviewTab) =
                   maxLength={MAX_NOTE_LENGTH}
                   placeholder="내 연인을 기록해 보세요!"
                   value={draft}
-                  onChange={(event) => setDraft(event.target.value)}
+                  onChange={(event) => setDraft(event.target.value.slice(0, MAX_NOTE_LENGTH))}
                   aria-label="기록 내용 (최대 150자)"
                 />
               </div>
@@ -287,7 +373,7 @@ export function RecordPreview({ onNavigate }: { onNavigate?: (tab: PreviewTab) =
           {mergeCandidate ? (
             <div className="fixed left-1/2 top-[calc(50%+180px)] -translate-x-1/2 z-[13] w-[358px] max-w-[calc(100%-32px)]">
               <Window01
-                refLabel={`Ref. ${mergeCandidate.targetCard?.content ?? ""}`}
+                refLabel={refLabelForCard(mergeCandidate.targetCard)}
                 primaryLabel="병합하기"
                 secondaryLabel="취소"
                 onMerge={handleMergeConfirm}
@@ -295,6 +381,19 @@ export function RecordPreview({ onNavigate }: { onNavigate?: (tab: PreviewTab) =
               />
             </div>
           ) : null}
+        </>
+      ) : null}
+
+      {deleteTarget ? (
+        <>
+          <div className="fixed inset-0 bg-[#111] opacity-80 z-[14] cursor-pointer" onClick={() => setDeleteTarget(null)} aria-hidden="true" />
+          <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-[15] w-[358px] max-w-[calc(100%-32px)]">
+            <DeleteConfirmDialog
+              refLabel={`Ref. ${badgeByRecordId.get(deleteTarget.id) ?? ""}`}
+              onDelete={confirmDelete}
+              onCancel={() => setDeleteTarget(null)}
+            />
+          </div>
         </>
       ) : null}
     </div>
