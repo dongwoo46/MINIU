@@ -14,7 +14,7 @@ import {
   type ProfileCardData,
   type RecordEntry,
 } from "@/shared/api/miniu";
-import { ProfileCardDeleteDialog } from "@/shared/ui/dialog-window";
+import { EditExitConfirmDialog, ProfileCardDeleteDialog, ProfileCardSaveConfirmDialog } from "@/shared/ui/dialog-window";
 
 const TITLE_BAR =
   "flex items-center justify-between px-2 py-1 border-b-2 border-[#4e5968] bg-gradient-to-r from-[#5376c7] via-[#5c82db] to-[#456cb8] [&_p]:m-0 [&_p]:font-pixel [&_p]:text-xs [&_p]:text-white [&_p]:tracking-[0.3px]";
@@ -120,9 +120,12 @@ function ProfileFileWindow({
   const [records, setRecords] = useState<RecordEntry[]>(devMock?.records ?? []);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<ProfileCardData | null>(null);
+  const [pendingExitAction, setPendingExitAction] = useState<(() => void) | null>(null);
+  const [saveConfirmCard, setSaveConfirmCard] = useState<ProfileCardData | null>(null);
   const [listThumb, setListThumb] = useState({ top: 0, height: 24, visible: false });
   const listRef = useRef<HTMLDivElement>(null);
   const [editThumb, setEditThumb] = useState({ top: 0, height: 24, visible: false });
@@ -228,6 +231,23 @@ function ProfileFileWindow({
     setExpandedId((current) => (current === id ? null : id));
   }
 
+  // 수정 중 저장하지 않고 팝업을 닫거나 다른 카테고리 탭으로 이동하려 하면
+  // 바로 실행하지 않고 확인 다이얼로그를 먼저 띄운다.
+  function requestExit(action: () => void) {
+    if (editingId) {
+      setPendingExitAction(() => action);
+    } else {
+      action();
+    }
+  }
+
+  function confirmExit() {
+    const action = pendingExitAction;
+    setPendingExitAction(null);
+    setEditingId(null);
+    action?.();
+  }
+
   function startEdit(card: ProfileCardData) {
     setEditingId(card.id);
     setEditingContent(card.content);
@@ -240,15 +260,22 @@ function ProfileFileWindow({
     if (devMock) {
       setCards((current) => current.map((item) => (item.id === card.id ? { ...item, content, updatedAt: new Date().toISOString() } : item)));
       setEditingId(null);
+      showSaveNotice();
       return;
     }
     try {
       const { card: updated } = await updateProfileCard(card.id, { content });
       setCards((current) => current.map((item) => (item.id === card.id ? updated : item)));
       setEditingId(null);
+      showSaveNotice();
     } catch (error) {
       setActionError(describeApiError(error));
     }
+  }
+
+  function showSaveNotice() {
+    setNotice("수정이 완료됐어요.");
+    window.setTimeout(() => setNotice((current) => (current === "수정이 완료됐어요." ? null : current)), 2500);
   }
 
   async function removeCard(card: ProfileCardData) {
@@ -273,9 +300,16 @@ function ProfileFileWindow({
     await removeCard(card);
   }
 
+  async function confirmSaveEdit() {
+    if (!saveConfirmCard) return;
+    const card = saveConfirmCard;
+    setSaveConfirmCard(null);
+    await saveEdit(card);
+  }
+
   return (
     <>
-      <div className="fixed inset-0 bg-[#111] opacity-80 z-20 cursor-pointer" onClick={onClose} aria-hidden="true" />
+      <div className="fixed inset-0 bg-[#111] opacity-80 z-20 cursor-pointer" onClick={() => requestExit(onClose)} aria-hidden="true" />
       <div
         className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-[21] w-[358px] max-w-[calc(100%-32px)] h-[456px] max-h-[calc(100%-64px)] flex flex-col bg-[#d8dee9] border-2 border-white shadow-[2px_2px_0px_0px_rgba(17,17,17,0.2)] overflow-hidden"
         role="dialog"
@@ -289,11 +323,17 @@ function ProfileFileWindow({
               <img src="/home/win-btn-1.svg" alt="" width={10} height={10} />
             </span>
             <img src="/home/win-btn-2.svg" alt="" width={16} height={16} className="shrink-0" aria-hidden="true" />
-            <button type="button" className={WINDOW_BTN} onClick={onClose} aria-label="팝업 닫기">
+            <button type="button" className={WINDOW_BTN} onClick={() => requestExit(onClose)} aria-label="팝업 닫기">
               <img src="/home/win-btn-3.svg" alt="" width={10} height={10} />
             </button>
           </div>
         </div>
+
+        {notice ? (
+          <p className="absolute left-2 right-2 top-[38px] z-30 px-2 py-1 bg-[#fce7f3] border border-[#f9a8d4] font-pixel text-xs text-[#191f28] text-center">
+            {notice}
+          </p>
+        ) : null}
 
         <div
           className="flex items-stretch overflow-x-auto border-b border-[#191f28] bg-white shrink-0 min-w-0 w-full cursor-grab active:cursor-grabbing select-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
@@ -363,11 +403,12 @@ function ProfileFileWindow({
               <button
                 key={item.id}
                 type="button"
-                onClick={() => {
-                  setActiveTab(item.id);
-                  setExpandedId(null);
-                  setEditingId(null);
-                }}
+                onClick={() =>
+                  requestExit(() => {
+                    setActiveTab(item.id);
+                    setExpandedId(null);
+                  })
+                }
                 className={`flex items-center gap-1.5 px-2 py-2 border-r border-[#4e5968] shrink-0 font-pixel text-xs tracking-[0.3px] whitespace-nowrap cursor-pointer ${
                   isActive ? "bg-[#333d4b]" : "bg-[#d8dee9] text-[#191f28]"
                 }`}
@@ -457,7 +498,7 @@ function ProfileFileWindow({
                           <button type="button" className="m-0 p-0 border-none bg-transparent cursor-pointer" style={{ color: "var(--color-text-quinary)" }} onClick={() => setEditingId(null)}>
                             취소
                           </button>
-                          <button type="button" className="m-0 p-0 border-none bg-transparent cursor-pointer" style={{ color: "var(--color-text-tertiary)" }} onClick={() => saveEdit(card)}>
+                          <button type="button" className="m-0 p-0 border-none bg-transparent cursor-pointer" style={{ color: "var(--color-text-tertiary)" }} onClick={() => setSaveConfirmCard(card)}>
                             저장
                           </button>
                         </>
@@ -495,6 +536,24 @@ function ProfileFileWindow({
           <div className="fixed inset-0 bg-[#111] opacity-80 z-[22] cursor-pointer" onClick={() => setDeleteTarget(null)} aria-hidden="true" />
           <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-[23] w-[358px] max-w-[calc(100%-32px)]">
             <ProfileCardDeleteDialog onDelete={confirmRemoveCard} onCancel={() => setDeleteTarget(null)} />
+          </div>
+        </>
+      ) : null}
+
+      {saveConfirmCard ? (
+        <>
+          <div className="fixed inset-0 bg-[#111] opacity-80 z-[22] cursor-pointer" onClick={() => setSaveConfirmCard(null)} aria-hidden="true" />
+          <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-[23] w-[358px] max-w-[calc(100%-32px)]">
+            <ProfileCardSaveConfirmDialog onSave={confirmSaveEdit} onCancel={() => setSaveConfirmCard(null)} />
+          </div>
+        </>
+      ) : null}
+
+      {pendingExitAction ? (
+        <>
+          <div className="fixed inset-0 bg-[#111] opacity-80 z-[24] cursor-pointer" onClick={() => setPendingExitAction(null)} aria-hidden="true" />
+          <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-[25] w-[358px] max-w-[calc(100%-32px)]">
+            <EditExitConfirmDialog onExit={confirmExit} onCancel={() => setPendingExitAction(null)} />
           </div>
         </>
       ) : null}

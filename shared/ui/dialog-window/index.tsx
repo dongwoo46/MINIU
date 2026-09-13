@@ -1,7 +1,7 @@
 import { ButtonPopup } from "@/shared/ui/pixel-button";
 
 const DIALOG_BASE =
-  "flex flex-col items-stretch w-[358px] bg-[#d8dee9] border-2 border-white shadow-[2px_2px_0px_0px_rgba(17,17,17,0.2)]";
+  "flex flex-col items-stretch w-full max-w-[358px] bg-[#d8dee9] border-2 border-white shadow-[2px_2px_0px_0px_rgba(17,17,17,0.2)]";
 
 type MergeDialogProps = {
   primaryLabel?: string;
@@ -113,6 +113,83 @@ export function Window02({
         secondaryLabel={secondaryLabel}
         onPrimaryClick={onMerge}
         onSecondaryClick={onDismiss}
+      />
+    </div>
+  );
+}
+
+type EditExitConfirmDialogProps = {
+  primaryLabel?: string;
+  secondaryLabel?: string;
+  onExit?: () => void;
+  onCancel?: () => void;
+  className?: string;
+};
+
+// Figma node 183:53295 (window 4, profile_edit 도중 close) — 저장 안 한 수정 종료 확인 다이얼로그
+export function EditExitConfirmDialog({
+  primaryLabel = "종료하기",
+  secondaryLabel = "취소",
+  onExit,
+  onCancel,
+  className,
+}: EditExitConfirmDialogProps) {
+  return (
+    <div
+      className={`${DIALOG_BASE}${className ? ` ${className}` : ""}`}
+      role="dialog"
+      aria-modal="true"
+    >
+      <div className="flex flex-col items-center gap-2 px-2 py-5">
+        <div className="m-0 text-center font-pixel text-base tracking-[0.16px] leading-[1.5] text-[#191f28] [&_p]:m-0">
+          <p>수정중이던 정보가 저장되지 않았어요.</p>
+          <p>수정을 종료할까요?</p>
+        </div>
+      </div>
+      <ButtonPopup
+        primaryLabel={primaryLabel}
+        secondaryLabel={secondaryLabel}
+        onPrimaryClick={onExit}
+        onSecondaryClick={onCancel}
+      />
+    </div>
+  );
+}
+
+type ProfileCardSaveConfirmDialogProps = {
+  primaryLabel?: string;
+  secondaryLabel?: string;
+  onSave?: () => void;
+  onCancel?: () => void;
+  className?: string;
+};
+
+// Figma node 183:52694 (window 4, profile_edit popup) — 카드 내용 수정 저장 확인 다이얼로그
+export function ProfileCardSaveConfirmDialog({
+  primaryLabel = "수정하기",
+  secondaryLabel = "취소",
+  onSave,
+  onCancel,
+  className,
+}: ProfileCardSaveConfirmDialogProps) {
+  return (
+    <div
+      className={`${DIALOG_BASE}${className ? ` ${className}` : ""}`}
+      role="dialog"
+      aria-modal="true"
+    >
+      <div className="flex flex-col items-center gap-2 px-2 py-5">
+        <div className="m-0 text-center font-pixel text-base tracking-[0.16px] leading-[1.5] text-[#191f28] [&_p]:m-0">
+          <p>이전 기록이 아닌,</p>
+          <p>수정된 정보가 우선 반영돼요.</p>
+          <p>수정할까요?</p>
+        </div>
+      </div>
+      <ButtonPopup
+        primaryLabel={primaryLabel}
+        secondaryLabel={secondaryLabel}
+        onPrimaryClick={onSave}
+        onSecondaryClick={onCancel}
       />
     </div>
   );

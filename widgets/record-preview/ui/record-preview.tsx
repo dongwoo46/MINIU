@@ -307,7 +307,7 @@ export function RecordPreview({
         </p>
         <button type="button" className="flex items-center gap-1 m-0 p-0 border-none bg-transparent font-pixel text-sm text-[#191f28] cursor-pointer" onClick={handleToggleSort}>
           <span>{sortOrder === "latest" ? "최신순" : "오래된순"}</span>
-          <img src="/minimi/sort-icon.svg" alt="" width={16} height={16} aria-hidden="true" />
+          <img src="/minimi/sort-icon.svg" alt="" width={16} height={16} className="rotate-90" aria-hidden="true" />
         </button>
       </div>
 
