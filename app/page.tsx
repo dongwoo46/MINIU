@@ -962,7 +962,7 @@ export default function Home() {
               <AutoGrowField label="가치관" placeholder="예: 약속을 지키는 것" value={partnerProfile.values} maxLength={PARTNER_PROFILE_FIELD_MAX_LENGTH} onChange={(value) => setPartnerProfile({ ...partnerProfile, values: value })} />
             </div>
             <p className="step-option-caption step-fields-caption">
-              답변은 초기 프로필 카드와 D-day 기준이 됩니다.<br />
+              답변은 초기 프로필 카드와 D+day 기준이 됩니다.<br />
               연인이 원치 않을 민감한 정보나 다른 사람의 정보는 넣지 마세요.
             </p>
             <div className="login-actions">
@@ -980,7 +980,7 @@ export default function Home() {
                   </div>
                   <div className="popup-alert-actions">
                     <Button type="button" fullWidth className="login-submit" onClick={() => { setShowMinimiCreatedPopup(false); setMode("login"); }}>
-                      <span className="text-label-kr">확인 ▶</span>
+                      <span className="text-label-kr">시작하기 ▶</span>
                     </Button>
                   </div>
                 </div>
@@ -1224,7 +1224,7 @@ export default function Home() {
               ))}
             </div>
             <p className="step-option-caption step-fields-caption">
-              답변은 초기 프로필 카드와 D-day 기준이 됩니다.<br />
+              답변은 초기 프로필 카드와 D+day 기준이 됩니다.<br />
               연인이 원치 않을 민감한 정보나 다른 사람의 정보는 넣지 마세요.
             </p>
             <div className="login-actions">
