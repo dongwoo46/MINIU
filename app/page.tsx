@@ -586,7 +586,7 @@ export default function Home() {
       coupleId: "dev-couple",
       backgroundKey: "default",
       me: { userId: "dev-me", miniu: mockMiniu("dev-me", "미니미"), equippedItems: [] },
-      partner: { userId: "dev-partner", miniu: mockMiniu("dev-partner", "연인 미니미"), equippedItems: [] },
+      partner: { userId: "dev-partner", miniu: mockMiniu("dev-partner", "지수 미니미"), equippedItems: [] },
       locks: { canVisit: true, canCustomizeMiniu: true, canUseInventory: true, needsMiniu: false },
     };
     const mockQuota: ChatQuota = { limit: 20, used: 3, remaining: 17, resetsAt: now };
@@ -597,7 +597,7 @@ export default function Home() {
       { id: "dev-r2", userId: "dev-me", content: "최근에 본 영화에 대해 이야기했는데, 지수는 액션 영화보다 드라마를 선호함.", happenedOn: "2025-09-17", analysisStatus: "complete", analysisError: null, createdAt: "2025-09-17T16:00:00.000Z" },
       { id: "dev-r1", userId: "dev-me", content: "이번 여름 여행에서 만난 친구가 일본 음식을 정말 좋아했는데, 초밥은 별로였음.", happenedOn: "2025-09-15", analysisStatus: "complete", analysisError: null, createdAt: "2025-09-15T18:15:00.000Z" },
     ];
-    const devPixelChrome = devTab === "home" || devTab === "record";
+    const devPixelChrome = devTab === "home" || devTab === "record" || devTab === "profile";
     return (
       <MobileShell active={devTab} onTabChange={setDevTab} hideChrome={devPixelChrome}>
         {devTab === "home" && (
@@ -607,10 +607,15 @@ export default function Home() {
           />
         )}
         {devTab === "record" && (
-          <RecordPreview onNavigate={setDevTab} devMock={{ records: mockRecords, unreadCount: 2, partnerName: "연인 미니미" }} />
+          <RecordPreview onNavigate={setDevTab} devMock={{ records: mockRecords, unreadCount: 2, partnerName: "지수 미니미" }} />
         )}
         {devTab === "letter" && <LetterPreview />}
-        {devTab === "profile" && <ProfilePreview onAddRecord={() => setDevTab("record")} />}
+        {devTab === "profile" && (
+          <ProfilePreview
+            onNavigate={setDevTab}
+            devMock={{ partnerName: "지수 미니미", dDay: 324, summary: "놀러다니는 것을 좋아하고, 잘 챙겨주는 연인이에요", unreadCount: 2 }}
+          />
+        )}
       </MobileShell>
     );
   }
@@ -1311,7 +1316,7 @@ export default function Home() {
     );
   }
 
-  const pixelChromeTabs = tab === "home" || tab === "record";
+  const pixelChromeTabs = tab === "home" || tab === "record" || tab === "profile";
 
   return (
     <MobileShell active={tab} onTabChange={(next) => { setTab(next); setToast(""); }} hideChrome={pixelChromeTabs}>
@@ -1320,7 +1325,7 @@ export default function Home() {
       {tab === "home" && <HomePreview onNavigate={setTab} />}
       {tab === "record" && <RecordPreview onNavigate={setTab} />}
       {tab === "letter" && <LetterPreview />}
-      {tab === "profile" && <ProfilePreview onAddRecord={() => setTab("record")} />}
+      {tab === "profile" && <ProfilePreview onNavigate={setTab} />}
       {showCoupleJustConnectedPopup && <CoupleConnectedPopup onClose={() => setShowCoupleJustConnectedPopup(false)} />}
       <Toast message={toast} onDismiss={() => setToast("")} />
     </MobileShell>
