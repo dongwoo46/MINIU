@@ -164,6 +164,22 @@ export function getHouse(): Promise<HouseData> {
   return miniuRequest("/api/miniu/house");
 }
 
+export type PreQuestions = {
+  id: string;
+  userId: string;
+  relationshipStartedOn: string;
+  likes: string[];
+  dislikes: string[];
+  tendencies: string[];
+  habits: string[];
+  values: string[];
+  createdAt: string;
+};
+
+export function getPreQuestions(): Promise<{ preQuestions: PreQuestions | null }> {
+  return miniuRequest("/api/miniu/onboarding/pre-questions");
+}
+
 export function getChatQuota(): Promise<ChatQuota> {
   return miniuRequest("/api/miniu/chat/quota");
 }

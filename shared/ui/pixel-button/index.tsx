@@ -18,8 +18,8 @@ export function ButtonPrimary({
   return (
     <button
       type="button"
-      className={`${BUTTON_BASE} miniuButton--primary bg-gradient-to-b from-white via-[#f296c1] to-[#db2777]${
-        className ? ` ${className}` : ""
+      className={`${BUTTON_BASE} miniuButton--primary bg-gradient-to-b from-white via-[#f296c1] to-[#db2777] ${
+        className ?? ""
       }`}
       {...rest}
     >
@@ -44,8 +44,8 @@ export function ButtonSecondary({
   return (
     <button
       type="button"
-      className={`${BUTTON_BASE} miniuButton--secondary bg-[#d8dee9] border-[1.6px] border-white shadow-[1px_1px_0px_rgba(0,0,0,0.2)]${
-        className ? ` ${className}` : ""
+      className={`${BUTTON_BASE} miniuButton--secondary bg-[#d8dee9] border-[1.6px] border-white shadow-[1px_1px_0px_rgba(0,0,0,0.2)] ${
+        className ?? ""
       }`}
       {...rest}
     >
