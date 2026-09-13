@@ -106,6 +106,10 @@
 html, body { margin: 0; min-height: 100%; }
 body { background: var(--bg-sunken); color: var(--text); font-family: var(--font-body); font-size: var(--text-body); line-height: 1.6; }
 button, input { font: inherit; color: inherit; }
+/* button/input의 font:inherit는 unlayered라 Tailwind utility layer의 font-pixel
+   class보다 캐스케이드 우선순위가 높아, 버튼에 직접 준 font-pixel이 씹힌다.
+   shared/ui/pixel-button(ButtonPrimary/Secondary)의 .miniuButton에 다시 명시. */
+.miniuButton { font-family: var(--font-pixel); }
 button, a, input { -webkit-tap-highlight-color: transparent; }
 button { cursor: pointer; appearance: none; -webkit-appearance: none; border-radius: 0; }
 button:disabled { cursor: not-allowed; opacity: .45; }

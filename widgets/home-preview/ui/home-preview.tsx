@@ -282,7 +282,7 @@ export function HomePreview({ onNavigate }: { onNavigate?: (tab: PreviewTab) => 
                   {!isMessageFocused && message.length === 0 ? (
                     <div className="absolute inset-0 flex items-center pt-[10px] pr-4 pb-[10px] pl-[10px] pointer-events-none font-pixel text-xs tracking-[0.3px] text-[#db2777]" aria-hidden="true">
                       <span>{partnerName}에게 한마디...</span>
-                      <span className="font-['Space_Mono',monospace] text-sm">|</span>
+                      <span className="font-['Space_Mono',monospace] text-sm animate-[miniuBlink_1s_steps(1,end)_infinite]">|</span>
                     </div>
                   ) : null}
                 </div>
