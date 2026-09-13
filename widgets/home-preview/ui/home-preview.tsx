@@ -28,6 +28,13 @@ import { Chip } from "@/shared/ui/chip";
 import { Icon } from "@/shared/ui/icon";
 import { TextField } from "@/shared/ui/text-field";
 
+const TITLE_BAR =
+  "flex items-center justify-between px-2 py-1 border-b-2 border-[#4e5968] bg-gradient-to-r from-[#5376c7] via-[#5c82db] to-[#456cb8] [&_p]:m-0 [&_p]:font-pixel [&_p]:text-xs [&_p]:text-white [&_p]:tracking-[0.3px]";
+const WINDOW_BTN =
+  "flex items-center justify-center w-4 h-4 p-0 border-2 border-white bg-[#d8dee9] cursor-pointer";
+const AFFECTION_BUTTON =
+  "w-[106.33px] shrink-0 flex flex-col items-center justify-center gap-0.5 h-[76px] px-0.5 py-2 border-2 border-white bg-gradient-to-b from-white via-[#accef3] to-[#7cb6f6] shadow-[2px_2px_0px_rgba(17,17,17,0.2)] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed";
+
 const MINIU_PRESETS = ["basic", "cool", "cute"];
 const HAIR_STYLES = ["short", "long", "curly", "ponytail"];
 const HAIR_COLORS = ["brown", "black", "blonde", "pink"];
@@ -66,6 +73,7 @@ export function HomePreview() {
   const [reply, setReply] = useState("");
   const [status, setStatus] = useState("");
   const [pending, setPending] = useState(false);
+  const [showHousePopup, setShowHousePopup] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -251,11 +259,9 @@ export function HomePreview() {
         <Button type="submit" aria-label="대화 보내기" disabled={pending || !message.trim()}><Icon name="arrow" /></Button>
       </form>
 
-      <div className="chip-list" role="group" aria-label="애정표현 보내기">
-        <Button variant="secondary" disabled={pending} onClick={() => handleAffection("hug")}>안아주기</Button>
-        <Button variant="secondary" disabled={pending} onClick={() => handleAffection("kiss")}>뽀뽀하기</Button>
-        <Button variant="secondary" disabled={pending} onClick={() => handleAffection("pat")}>쓰다듬기</Button>
-      </div>
+      {house?.locks.canVisit && (
+        <Button variant="secondary" fullWidth disabled={pending} onClick={() => setShowHousePopup(true)}>{partnerName} 집에 놀러가기</Button>
+      )}
 
       <div className="section-heading">
         <h2>알림</h2>
@@ -300,6 +306,104 @@ export function HomePreview() {
       ))}
 
       <p className="preview-footnote">실제 집, AI 채팅, 애정표현 API와 연결됐어요</p>
+
+      {showHousePopup && (
+        <>
+          <div
+            className="fixed inset-0 bg-[#111] opacity-80 z-10 cursor-pointer"
+            onClick={() => setShowHousePopup(false)}
+            aria-hidden="true"
+          />
+          <div
+            className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[358px] max-w-[calc(100%-32px)] flex flex-col items-stretch border-2 border-white shadow-[2px_2px_0px_0px_rgba(17,17,17,0.2)] z-[11]"
+            role="dialog"
+            aria-modal="true"
+            aria-label={`${partnerName} 집`}
+          >
+            <div className={TITLE_BAR}>
+              <p>my home.exe - [wellcome!]</p>
+              <div className="flex items-center gap-0.5">
+                <span className={WINDOW_BTN} aria-hidden="true">
+                  <span className="w-2 h-2 border-[1.5px] border-[#111] box-border" />
+                </span>
+                <button type="button" className={WINDOW_BTN} onClick={() => setShowHousePopup(false)} aria-label="팝업 닫기">
+                  <Icon name="close" width={10} height={10} />
+                </button>
+              </div>
+            </div>
+
+            <div className="w-full p-2 bg-[#d8dee9]">
+              <div className="flex items-center gap-1 w-full p-[10px] bg-white border-2 border-[#2b1f28]">
+                <Icon name="heart" width={14} height={14} className="shrink-0 text-[#db2777]" />
+                <p className="flex-1 min-w-0 m-0 font-pixel text-xs tracking-[0.3px] text-[#db2777]">
+                  {status || `${partnerName}와 마음을 나눠보세요`}
+                </p>
+              </div>
+            </div>
+
+            <div className="w-full px-2 py-1 bg-[#d8dee9]">
+              <div className="relative w-full h-[236px] overflow-hidden border-2 border-[#191f28]">
+                <img className="w-full h-full object-cover object-top" src="/minimi/room-bg.png" alt={`${partnerName}의 방`} />
+                <div className="absolute left-1/2 bottom-[17.2px] -translate-x-1/2 w-[98px] h-[137px]">
+                  <img
+                    className="absolute left-1/2 top-[121px] w-[104px] h-[15px] -translate-x-1/2"
+                    src="/minimi/popup-minimi-shadow.svg"
+                    alt=""
+                    aria-hidden="true"
+                  />
+                  <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                    <img
+                      className="absolute left-[-42.41%] top-[-12.36%] w-[185.86%] h-[133%] max-w-none"
+                      src="/minimi/minimi-character.png"
+                      alt="미니유 캐릭터"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex flex-col items-center gap-5 w-full pt-2 px-2 pb-1.5 bg-[#d8dee9]">
+                <div className="flex justify-center gap-[10px] w-full">
+                  <button type="button" className={AFFECTION_BUTTON} disabled={pending} onClick={() => handleAffection("pat")}>
+                    <span className="relative overflow-hidden shrink-0 w-[26px] h-[24px]">
+                      <img className="absolute left-[-87.05%] top-[-49.84%] w-[274.41%] h-[199.36%] max-w-none" src="/minimi/heart-icon.png" alt="" aria-hidden="true" />
+                    </span>
+                    <span className="flex items-center gap-0.5 font-pixel text-sm tracking-[0.196px] text-[#2b1f28]">
+                      <span>쓰다듬기</span>
+                      <span className="text-[10px]">▼</span>
+                    </span>
+                  </button>
+                  <button type="button" className={AFFECTION_BUTTON} disabled={pending} onClick={() => handleAffection("hug")}>
+                    <span className="relative overflow-hidden shrink-0 w-6 h-[22px]">
+                      <img className="absolute left-[-87.05%] top-[-49.84%] w-[274.41%] h-[199.36%] max-w-none" src="/minimi/heart-icon.png" alt="" aria-hidden="true" />
+                    </span>
+                    <span className="flex items-center gap-0.5 font-pixel text-sm tracking-[0.196px] text-[#2b1f28]">
+                      <span>안아주기</span>
+                      <span className="text-[10px]">▼</span>
+                    </span>
+                  </button>
+                  <button type="button" className={AFFECTION_BUTTON} disabled={pending} onClick={() => handleAffection("kiss")}>
+                    <span className="relative overflow-hidden shrink-0 w-6 h-[22px]">
+                      <img className="absolute left-[-87.05%] top-[-49.84%] w-[274.41%] h-[199.36%] max-w-none" src="/minimi/heart-icon.png" alt="" aria-hidden="true" />
+                    </span>
+                    <span className="flex items-center gap-0.5 font-pixel text-sm tracking-[0.196px] text-[#2b1f28]">
+                      <span>뽀뽀하기</span>
+                      <span className="text-[10px]">▼</span>
+                    </span>
+                  </button>
+                </div>
+
+                <button
+                  type="button"
+                  className="w-full h-[41px] border-2 border-white bg-[#d8dee9] shadow-[1px_1px_0px_rgba(0,0,0,0.2)] font-pixel text-sm tracking-[0.196px] text-[#333d4b] cursor-pointer"
+                  onClick={() => setShowHousePopup(false)}
+                >
+                  닫기
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </section>
   );
 }
