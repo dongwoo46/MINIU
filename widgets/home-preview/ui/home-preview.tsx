@@ -34,6 +34,19 @@ const AFFECTION_BUTTON =
 const ATTR_PICK =
   "px-2 py-1 border-2 border-[#2b1f28] font-pixel text-[10px] tracking-[0.3px] cursor-pointer";
 
+const AFFECTION_PHRASES: Record<"pat" | "hug" | "kiss", string[]> = {
+  pat: ["헤헷 쓰담쓰담 좋아!", "기분이 몽글몽글해져~", "한 번 더 쓰다듬어줘!", "손길이 따뜻해서 좋아"],
+  hug: ["꼭 안아주니까 든든해!", "이대로 계속 있고 싶어~", "포근포근 행복해!", "심장이 콩닥콩닥해"],
+  kiss: ["뽀뽀해줘서 고마워 ♥", "얼굴이 빨개졌어 >_<", "두근두근 설레어!", "한 번 더 해줄래?"],
+};
+
+function pickAffectionPhrase(affectionType: "pat" | "hug" | "kiss", lastPhrase: string): string {
+  const pool = AFFECTION_PHRASES[affectionType];
+  const candidates = pool.filter((phrase) => phrase !== lastPhrase);
+  const options = candidates.length > 0 ? candidates : pool;
+  return options[Math.floor(Math.random() * options.length)];
+}
+
 // 이름 끝 글자에 받침이 있으면 "아", 없으면 "야"(한글이 아니면 "야"로 기본값).
 function withVocative(name: string): string {
   const lastChar = name.trim().slice(-1);
@@ -96,6 +109,8 @@ export function HomePreview({ onNavigate }: { onNavigate?: (tab: PreviewTab) => 
   const [isMessageOverflowing, setIsMessageOverflowing] = useState(false);
   const [thumbStyle, setThumbStyle] = useState({ top: 0, height: 24 });
   const [inputBoxHeight, setInputBoxHeight] = useState(42);
+  const [affectionBubble, setAffectionBubble] = useState("");
+  const [affectionEffectKey, setAffectionEffectKey] = useState(0);
   const messageRef = useRef<HTMLTextAreaElement>(null);
   const messageTrackRef = useRef<HTMLDivElement>(null);
   const MIN_THUMB_HEIGHT = 24;
@@ -186,6 +201,8 @@ export function HomePreview({ onNavigate }: { onNavigate?: (tab: PreviewTab) => 
     try {
       await sendAffection(affectionType);
       setStatus("마음을 보냈어요.");
+      setAffectionBubble(pickAffectionPhrase(affectionType, affectionBubble));
+      setAffectionEffectKey((key) => key + 1);
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "마음을 보내지 못했어요.");
     } finally {
@@ -415,9 +432,14 @@ export function HomePreview({ onNavigate }: { onNavigate?: (tab: PreviewTab) => 
             <div className={TITLE_BAR}>
               <p>my home.exe - [wellcome!]</p>
               <div className="flex items-center gap-0.5">
-                <span className={WINDOW_BTN} aria-hidden="true"><span className="w-2 h-2 border-[1.5px] border-[#111] box-border" /></span>
+                <span className={WINDOW_BTN} aria-hidden="true">
+                  <img className="w-[10px] h-[10px]" src="/minimi/window-btn-min.svg" alt="" />
+                </span>
+                <span className={WINDOW_BTN} aria-hidden="true">
+                  <span className="w-2 h-2 border-[1.5px] border-[#111] box-border" />
+                </span>
                 <button type="button" className={WINDOW_BTN} onClick={() => setShowHousePopup(false)} aria-label="팝업 닫기">
-                  <Icon name="close" width={10} height={10} />
+                  <img className="w-[6.124px] h-[6.124px]" src="/minimi/window-btn-close.svg" alt="" />
                 </button>
               </div>
             </div>
@@ -434,6 +456,12 @@ export function HomePreview({ onNavigate }: { onNavigate?: (tab: PreviewTab) => 
             <div className="w-full px-2 py-1 bg-[#d8dee9]">
               <div className="relative w-full h-[236px] overflow-hidden border-2 border-[#191f28]">
                 <img className="w-full h-full object-cover object-top" src="/minimi/room-bg.png" alt={`${partnerName}의 방`} />
+                {affectionBubble && (
+                  <div className="absolute left-1/2 top-[7.4px] -translate-x-1/2 max-w-[300px] z-[1] flex flex-col items-end px-2 py-1.5 bg-white border-2 border-[#2b1f28] drop-shadow-[2px_2px_0px_#2b1f28]">
+                    <p className="m-0 w-fit max-w-full font-pixel text-sm tracking-[0.196px] text-[#191f28] text-center break-words">{affectionBubble}</p>
+                    <p className="m-0 text-[10px]!" aria-hidden="true">▼</p>
+                  </div>
+                )}
                 <div className="absolute left-1/2 bottom-[17.2px] -translate-x-1/2 w-[98px] h-[137px]">
                   <img
                     className="absolute left-1/2 top-[121px] w-[104px] h-[15px] -translate-x-1/2"
@@ -448,6 +476,13 @@ export function HomePreview({ onNavigate }: { onNavigate?: (tab: PreviewTab) => 
                       alt="미니유 캐릭터"
                     />
                   </div>
+                  {affectionEffectKey > 0 && (
+                    <div key={affectionEffectKey} className="absolute inset-0 pointer-events-none" aria-hidden="true">
+                      <span className="affection-heart" style={{ left: "10%", animationDelay: "0ms" }}>♥</span>
+                      <span className="affection-heart" style={{ left: "45%", animationDelay: "120ms" }}>♥</span>
+                      <span className="affection-heart" style={{ left: "75%", animationDelay: "240ms" }}>♥</span>
+                    </div>
+                  )}
                 </div>
               </div>
 
