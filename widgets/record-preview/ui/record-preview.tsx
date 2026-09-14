@@ -390,10 +390,6 @@ export function RecordPreview({
             <div className={TITLE_BAR}>
               <p>{`${partnerName} note.exe - [file ${String(nextFileNumber).padStart(2, "0")}]`}</p>
               <div className="flex items-center gap-0.5">
-                <span className={WINDOW_BTN} aria-hidden="true">
-                  <img src="/home/win-btn-1.svg" alt="" width={10} height={10} />
-                </span>
-                <img src="/home/win-btn-2.svg" alt="" width={16} height={16} className="shrink-0" aria-hidden="true" />
                 <button type="button" className={WINDOW_BTN} onClick={handleCloseWrite} aria-label="팝업 닫기">
                   <img src="/home/win-btn-3.svg" alt="" width={10} height={10} />
                 </button>

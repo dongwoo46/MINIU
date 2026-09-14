@@ -62,12 +62,6 @@ export function HousePopup({ partnerName, onClose, devMock = false }: { partnerN
         <div className={TITLE_BAR}>
           <p>my home.exe - [wellcome!]</p>
           <div className="flex items-center gap-0.5">
-            <span className={WINDOW_BTN} aria-hidden="true">
-              <img className="w-[10px] h-[10px]" src="/minimi/window-btn-min.svg" alt="" />
-            </span>
-            <span className={WINDOW_BTN} aria-hidden="true">
-              <span className="w-2 h-2 border-[1.5px] border-[#111] box-border" />
-            </span>
             <button type="button" className={WINDOW_BTN} onClick={onClose} aria-label="팝업 닫기">
               <img className="w-[6.124px] h-[6.124px]" src="/minimi/window-btn-close.svg" alt="" />
             </button>
