@@ -9,10 +9,11 @@ import { TextField } from "@/shared/ui/text-field";
 import { Toast } from "@/shared/ui/toast";
 import { HomePreview } from "@/widgets/home-preview";
 import { LetterPreview } from "@/widgets/letter-preview";
+import { NotificationPreview } from "@/widgets/notification-preview";
 import { ProfilePreview } from "@/widgets/profile-preview";
 import { RecordPreview } from "@/widgets/record-preview";
 import { MobileShell } from "@/widgets/mobile-shell";
-import type { HouseData, ChatQuota, RecordEntry, ProfileCardData } from "@/shared/api/miniu";
+import type { HouseData, ChatQuota, RecordEntry, NotificationData, ProfileCardData } from "@/shared/api/miniu";
 
 type PublicUser = {
   id: string;
@@ -305,6 +306,15 @@ const INITIAL_MOCK_PROFILE_CARDS: ProfileCardData[] = [
   { id: "dev-p3", userId: "dev-me", category: "dislikes", content: "민트초코", sources: [{ type: "record", id: "dev-r5" }], mergeCandidateOf: null, userEdited: false, createdAt: "2025-09-20T14:20:00.000Z", updatedAt: "2025-09-20T14:20:00.000Z" },
 ];
 
+const INITIAL_MOCK_NOTIFICATIONS: NotificationData[] = [
+  { id: "dev-n1", userId: "dev-me", coupleId: "dev-couple", type: "affection_received", title: "지수님이 '뽀뽀하기 💋'를 보냈어요", body: null, isRead: false, readAt: null, metadata: {}, createdAt: new Date(Date.now() - 5 * 60000).toISOString() },
+  { id: "dev-n2", userId: "dev-me", coupleId: "dev-couple", type: "profile_merge_candidate", title: "새로운 취향 조각 #15가 저장되었어요", body: "지수의 최신 관심사: '민트초코라떼', '다이어리 꾸미기'", isRead: false, readAt: null, metadata: {}, createdAt: new Date(Date.now() - 20 * 60000).toISOString() },
+  { id: "dev-n3", userId: "dev-me", coupleId: "dev-couple", type: "affection_received", title: "지수님이 '쓰다듬기 🫳🏻'를 보냈어요", body: null, isRead: true, readAt: new Date().toISOString(), metadata: {}, createdAt: new Date(Date.now() - 2 * 3600000).toISOString() },
+  { id: "dev-n4", userId: "dev-me", coupleId: "dev-couple", type: "affection_received", title: "지수님이 '안아주기 안아주기🫂'를 보냈어요", body: null, isRead: true, readAt: new Date().toISOString(), metadata: {}, createdAt: new Date(Date.now() - 5 * 3600000).toISOString() },
+  { id: "dev-n5", userId: "dev-me", coupleId: "dev-couple", type: "profile_merge_candidate", title: "새로운 취향 조각 #14가 저장되었어요", body: "지수의 습관: '자기 전 일기쓰기'", isRead: true, readAt: new Date().toISOString(), metadata: {}, createdAt: new Date(Date.now() - 1 * 86400000).toISOString() },
+  { id: "dev-n6", userId: "dev-me", coupleId: "dev-couple", type: "couple_connected", title: "지수님과 연인 링크 연결 성공!", body: "둘만의 미니미 월드가 열렸어요.", isRead: true, readAt: new Date().toISOString(), metadata: {}, createdAt: new Date(Date.now() - 3 * 86400000).toISOString() },
+];
+
 // dev 미리보기 전용 간이 분류(실제 백엔드의 AI 분석을 흉내만 냄, 키워드 매칭이라 정확하지 않음).
 // 기록 하나가 여러 카테고리에 걸쳐 있으면 카테고리별로 카드를 하나씩 만든다.
 function classifyMockRecordCategories(content: string): ProfileCardData["category"][] {
@@ -380,6 +390,7 @@ const preQuestionLabels: Record<PreQuestionKey, { label: string; placeholder: st
 
 export default function Home() {
   const [tab, setTab] = useState<PreviewTab>("home");
+  const [showNotifications, setShowNotifications] = useState(false);
   const [toast, setToast] = useState("");
   const [mode, setMode] = useState<AuthMode>("login");
   const [showPassword, setShowPassword] = useState(false);
@@ -408,8 +419,10 @@ export default function Home() {
   const [me, setMe] = useState<MeData | null>(null);
   const [devHomePreview, setDevHomePreview] = useState(false);
   const [devTab, setDevTab] = useState<PreviewTab>("home");
+  const [devShowNotifications, setDevShowNotifications] = useState(false);
   const [mockRecords, setMockRecords] = useState<RecordEntry[]>(INITIAL_MOCK_RECORDS);
   const [mockProfileCards, setMockProfileCards] = useState<ProfileCardData[]>(INITIAL_MOCK_PROFILE_CARDS);
+  const [mockNotifications, setMockNotifications] = useState<NotificationData[]>(INITIAL_MOCK_NOTIFICATIONS);
   const [showCoupleJustConnectedPopup, setShowCoupleJustConnectedPopup] = useState(false);
   const [pending, setPending] = useState(false);
   const [invitation, setInvitation] = useState<PublicInvitation | null>(null);
@@ -812,24 +825,41 @@ export default function Home() {
 
     return (
       <MobileShell active={devTab} onTabChange={setDevTab} hideChrome={devPixelChrome}>
-        {devTab === "home" && (
-          <HomePreview
-            onNavigate={setDevTab}
-            devMock={{ house: mockHouse, quota: mockQuota, unreadCount: 2, relationshipStartedOn: "2025-01-01" }}
+        {devShowNotifications ? (
+          <NotificationPreview
+            onNavigate={(next) => { setDevShowNotifications(false); setDevTab(next); }}
+            onBack={() => setDevShowNotifications(false)}
+            devMock={{
+              notifications: mockNotifications,
+              partnerName: "지수 미니미",
+              onRead: (ids) => setMockNotifications((prev) => prev.map((item) => (ids.includes(item.id) ? { ...item, isRead: true } : item))),
+            }}
           />
-        )}
-        {devTab === "record" && (
-          <RecordPreview
-            onNavigate={setDevTab}
-            devMock={{ records: mockRecords, unreadCount: 2, partnerName: "지수 미니미", onCreateRecord: handleMockRecordCreate, onDeleteRecord: handleMockRecordDelete }}
-          />
-        )}
-        {devTab === "letter" && <LetterPreview />}
-        {devTab === "profile" && (
-          <ProfilePreview
-            onNavigate={setDevTab}
-            devMock={{ partnerName: "지수 미니미", dDay: 324, summary: "놀러다니는 것을 좋아하고, 잘 챙겨주는 연인이에요", unreadCount: 2, cards: mockProfileCards, records: mockRecords }}
-          />
+        ) : (
+          <>
+            {devTab === "home" && (
+              <HomePreview
+                onNavigate={setDevTab}
+                onOpenNotifications={() => setDevShowNotifications(true)}
+                devMock={{ house: mockHouse, quota: mockQuota, unreadCount: mockNotifications.filter((n) => !n.isRead).length, relationshipStartedOn: "2025-01-01" }}
+              />
+            )}
+            {devTab === "record" && (
+              <RecordPreview
+                onNavigate={setDevTab}
+                onOpenNotifications={() => setDevShowNotifications(true)}
+                devMock={{ records: mockRecords, unreadCount: mockNotifications.filter((n) => !n.isRead).length, partnerName: "지수 미니미", onCreateRecord: handleMockRecordCreate, onDeleteRecord: handleMockRecordDelete }}
+              />
+            )}
+            {devTab === "letter" && <LetterPreview />}
+            {devTab === "profile" && (
+              <ProfilePreview
+                onNavigate={setDevTab}
+                onOpenNotifications={() => setDevShowNotifications(true)}
+                devMock={{ partnerName: "지수 미니미", dDay: 324, summary: "놀러다니는 것을 좋아하고, 잘 챙겨주는 연인이에요", unreadCount: mockNotifications.filter((n) => !n.isRead).length, cards: mockProfileCards, records: mockRecords }}
+              />
+            )}
+          </>
         )}
       </MobileShell>
     );
@@ -1561,10 +1591,16 @@ export default function Home() {
     <MobileShell active={tab} onTabChange={(next) => { setTab(next); setToast(""); }} hideChrome={pixelChromeTabs}>
       {!pixelChromeTabs && <div className="auth-user-strip"><span>{user.name}님</span><button type="button" onClick={logout}>로그아웃</button></div>}
       {!pixelChromeTabs && !me.couple && <Surface className="onboarding-banner"><strong>연인과 연결하기</strong><span>홈은 볼 수 있지만 기록·프로필·문자·채팅은 연결 후 열려요.</span></Surface>}
-      {tab === "home" && <HomePreview onNavigate={setTab} />}
-      {tab === "record" && <RecordPreview onNavigate={setTab} />}
-      {tab === "letter" && <LetterPreview />}
-      {tab === "profile" && <ProfilePreview onNavigate={setTab} />}
+      {showNotifications ? (
+        <NotificationPreview onNavigate={(next) => { setShowNotifications(false); setTab(next); }} onBack={() => setShowNotifications(false)} />
+      ) : (
+        <>
+          {tab === "home" && <HomePreview onNavigate={setTab} onOpenNotifications={() => setShowNotifications(true)} />}
+          {tab === "record" && <RecordPreview onNavigate={setTab} onOpenNotifications={() => setShowNotifications(true)} />}
+          {tab === "letter" && <LetterPreview />}
+          {tab === "profile" && <ProfilePreview onNavigate={setTab} onOpenNotifications={() => setShowNotifications(true)} />}
+        </>
+      )}
       {showCoupleJustConnectedPopup && <CoupleConnectedPopup onClose={() => setShowCoupleJustConnectedPopup(false)} />}
       <Toast message={toast} onDismiss={() => setToast("")} />
     </MobileShell>
