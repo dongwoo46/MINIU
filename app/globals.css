@@ -561,7 +561,11 @@ img, .minimi-avatar { image-rendering: pixelated; }
 .house-actions button { min-height: 36px; padding: 0 var(--space-16); border: 0; border-radius: 999px; background: #eff0f3; font-size: 12px; font-weight: 700; }
 @media (min-width: 800px) {
   .site-frame { padding: var(--space-32) 0; background-image: radial-gradient(#c9c1b5 1px, transparent 1px); background-size: 16px 16px; }
-  .mobile-shell { min-height: 844px; border: 1px solid #d1c8bd; box-shadow: 8px 8px 0 #ded6cb; }
+  /* contain: layout은 mobile-shell을 하위 position:fixed 요소(하단 버튼바, 팝업 딤 배경 등)의
+     containing block으로 만든다 — 데스크톱에서 실제 브라우저 뷰포트가 아니라 844px 폰 프레임
+     카드에 고정되도록 하기 위함. 모바일(이 미디어쿼리 밖)에서는 mobile-shell이 뷰포트와 같으므로
+     영향 없음. */
+  .mobile-shell { min-height: 844px; border: 1px solid #d1c8bd; box-shadow: 8px 8px 0 #ded6cb; contain: layout; }
 }
 @media (min-width: 1200px) {
   .desktop-note { display: block; position: fixed; top: 35%; left: calc(50% - 490px); }

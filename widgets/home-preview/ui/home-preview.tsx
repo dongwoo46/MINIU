@@ -25,8 +25,6 @@ const EXPRESSIONS = ["smile", "wink", "calm", "giggle"];
 
 const TITLE_BAR =
   "flex items-center justify-between px-2 py-1 border-b-2 border-[#4e5968] bg-gradient-to-r from-[#5376c7] via-[#5c82db] to-[#456cb8] [&_p]:m-0 [&_p]:font-pixel [&_p]:text-xs [&_p]:text-white [&_p]:tracking-[0.3px]";
-const WINDOW_BTN =
-  "flex items-center justify-center w-4 h-4 p-0 border-2 border-white bg-[#d8dee9] cursor-pointer";
 const NAV_ITEM =
   "flex-1 flex flex-col items-center gap-1 px-[10px] py-1.5 border-none bg-transparent no-underline cursor-pointer [&_img]:w-[46px] [&_img]:h-[46px] [&_p]:m-0 [&_p]:font-pixel [&_p]:text-base [&_p]:text-[#191f28]";
 const ATTR_PICK =
@@ -273,17 +271,6 @@ export function HomePreview({
         <div className="flex flex-col w-full border-2 border-[#2b1f28] shadow-[2px_2px_0px_0px_rgba(17,17,17,0.2)]">
           <div className={TITLE_BAR}>
             <p>jisoo_cam.exe - [Live Garden Stage]</p>
-            <div className="flex items-center gap-0.5">
-              <span className={WINDOW_BTN} aria-hidden="true">
-                <img className="w-[10px] h-[10px]" src="/minimi/window-btn-min.svg" alt="" />
-              </span>
-              <span className={WINDOW_BTN} aria-hidden="true">
-                <span className="w-2 h-2 border-[1.5px] border-[#111] box-border" />
-              </span>
-              <span className={WINDOW_BTN} aria-hidden="true">
-                <img className="w-[6.124px] h-[6.124px]" src="/minimi/window-btn-close.svg" alt="" />
-              </span>
-            </div>
           </div>
 
           <div className="flex gap-3 px-2 py-1 bg-[#d8dee9] border-b border-[#4e5968] [&_p]:m-0 [&_p]:font-pixel [&_p]:text-[10px]">
