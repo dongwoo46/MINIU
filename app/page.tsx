@@ -848,7 +848,14 @@ export default function Home() {
                 <div className="login-fields signup-fields login-fields--cat">
                   <Image src="/login/cat-peek.png" alt="" width={68} height={68} className="login-fields-cat" aria-hidden />
                   <div className="login-field">
-                    <TextField label="닉네임" placeholder="닉네임을 입력해주세요" value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} required />
+                    <TextField
+                      label="나를 뭐라고 불러줄까요?"
+                      description="연인 미니미가 나를 부를 때 사용할 이름이에요"
+                      placeholder="이름이나 애칭을 입력해주세요"
+                      value={form.name}
+                      onChange={(event) => setForm({ ...form, name: event.target.value })}
+                      required
+                    />
                   </div>
                   <div className="login-field">
                     <TextField label="생년월일" inputMode="numeric" maxLength={10} placeholder="yyyy.mm.dd" value={formatBirthDisplay(birthDigits)} onChange={(event) => handleBirthDateChange(event.target.value)} error={birthDateError ?? (under14 ? "만 14세 미만은 가입할 수 없어요." : undefined)} required />
