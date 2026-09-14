@@ -319,10 +319,6 @@ function ProfileFileWindow({
         <div className={TITLE_BAR}>
           <p>{`${partnerName} file.exe - [zip]`}</p>
           <div className="flex items-center gap-0.5">
-            <span className={WINDOW_BTN} aria-hidden="true">
-              <img src="/home/win-btn-1.svg" alt="" width={10} height={10} />
-            </span>
-            <img src="/home/win-btn-2.svg" alt="" width={16} height={16} className="shrink-0" aria-hidden="true" />
             <button type="button" className={WINDOW_BTN} onClick={() => requestExit(onClose)} aria-label="팝업 닫기">
               <img src="/home/win-btn-3.svg" alt="" width={10} height={10} />
             </button>
@@ -681,15 +677,6 @@ export function ProfilePreview({
           <div className="flex flex-col items-stretch bg-white border-2 border-[#2b1f28] shadow-[2px_2px_0px_rgba(0,0,0,0.2)] overflow-hidden w-full">
             <div className={TITLE_BAR}>
               <p>{`${partnerName} file.exe - [zip]`}</p>
-              <div className="flex items-center gap-0.5">
-                <span className={WINDOW_BTN} aria-hidden="true">
-                  <img src="/home/win-btn-1.svg" alt="" width={10} height={10} />
-                </span>
-                <img src="/home/win-btn-2.svg" alt="" width={16} height={16} className="shrink-0" aria-hidden="true" />
-                <span className={WINDOW_BTN} aria-hidden="true">
-                  <img src="/home/win-btn-3.svg" alt="" width={10} height={10} />
-                </span>
-              </div>
             </div>
             <div className="flex items-center gap-3 px-2 pt-1 pb-[5px] bg-[#d8dee9] border-b border-[#4e5968] font-pixel text-[10px] text-[#191f28] w-full [&_p]:m-0">
               <p>파일(F)</p>
