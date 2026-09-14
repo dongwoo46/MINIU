@@ -224,6 +224,7 @@ export function HomePreview({
   }
 
   const partnerName = house?.partner.miniu?.name ?? "연인";
+  const partnerShortName = partnerName.replace(/\s*미니미$/, "") || partnerName;
   const myName = myUserName || "나";
   const chatExhausted = quota !== null && quota.remaining <= 0;
   const dDay = calcDDay(relationshipStartedOn);
@@ -268,6 +269,7 @@ export function HomePreview({
       </div>
 
       <div className="relative flex-1 flex flex-col items-stretch gap-4 px-4 pb-[110px] mt-6 overflow-y-auto">
+        <div className="flex flex-col gap-2 w-full">
         <div className="flex flex-col w-full border-2 border-[#2b1f28] shadow-[2px_2px_0px_0px_rgba(17,17,17,0.2)]">
           <div className={TITLE_BAR}>
             <p>jisoo_cam.exe - [Live Garden Stage]</p>
@@ -366,6 +368,11 @@ export function HomePreview({
           </div>
         </div>
 
+        {house?.locks.canVisit && (
+          <ButtonPrimary label={`${partnerName}집 놀러가기`} disabled={pending} onClick={() => setShowHousePopup(true)} />
+        )}
+        </div>
+
         {house?.locks.needsMiniu && (
           <div className="flex flex-col gap-2 p-2 bg-white border-2 border-[#2b1f28]">
             <p className="m-0 font-pixel text-xs text-[#191f28]">내 미니유를 만들어주세요</p>
@@ -386,9 +393,48 @@ export function HomePreview({
           </div>
         )}
 
-        {house?.locks.canVisit && (
-          <ButtonPrimary label={`${partnerName}집 놀러가기`} disabled={pending} onClick={() => setShowHousePopup(true)} />
-        )}
+        <div className="flex flex-col gap-2.5 w-full">
+          <div className="flex flex-col gap-2 w-full p-[11.4px] bg-white border-[1.4px] border-[#e5e8eb] rounded-[6px] shadow-[0px_6px_3px_0px_rgba(0,0,0,0.08)]">
+            <div className="flex flex-col gap-1.5 w-full">
+              <div className="flex items-center w-full pb-[9px] border-b border-dashed border-[#d1d6db]">
+                <span className="inline-block w-fit p-[5px] bg-[#e9f9ff] border border-[#7cb6f6] font-pixel text-[10px] text-[#1d4ed8] tracking-[0.3px]">
+                  🔍 오늘의 취향 대결
+                </span>
+              </div>
+              <p className="m-0 font-pixel text-xs text-[#191f28] tracking-[0.3px]">
+                미니미에게 물어보고 답을 기록해보세요!
+              </p>
+              <div className="w-full p-[9px] bg-[#fafbfc] border border-[#e5e8eb]">
+                <p className="m-0 font-pixel text-xs text-[#4b5563] tracking-[0.3px]">
+                  {partnerShortName}는 아침형 vs 저녁형?
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-2 w-full p-[11.4px] bg-white border-[1.4px] border-[#e5e8eb] rounded-[6px] shadow-[0px_6px_3px_0px_rgba(0,0,0,0.08)]">
+            <div className="flex flex-col gap-1.5 w-full">
+              <div className="flex items-center gap-1.5 w-full pb-[9px] border-b border-dashed border-[#d1d6db]">
+                <span className="inline-block w-fit p-[5px] bg-[#e9f9ff] border border-[#7cb6f6] font-pixel text-[10px] text-[#1d4ed8] tracking-[0.3px]">
+                  💡 {partnerShortName}의 사실 조각 #14
+                </span>
+                <button
+                  type="button"
+                  className="text-caption-s ml-auto border-0 bg-transparent p-0 cursor-pointer"
+                  style={{ color: "var(--color-accent-pink)" }}
+                  onClick={() => onNavigate?.("record")}
+                >
+                  +추가하기
+                </button>
+              </div>
+              <div className="w-full p-[9px] bg-[#fafbfc] border border-[#e5e8eb]">
+                <p className="m-0 font-pixel text-xs text-[#4b5563] tracking-[0.3px]">
+                  &ldquo;비 오는 날에는 꼭 따뜻한 코코아를 마셔요☕️&rdquo;
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
 
       </div>
 
