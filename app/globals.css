@@ -55,6 +55,17 @@
   }
 }
 
+/* 로딩 화면 고양이가 좌우로 흔들리는 모션. Tailwind arbitrary animate-[catWobble_...]가 참조한다 */
+@keyframes catWobble {
+  0%,
+  100% {
+    transform: translateX(-6px) rotate(-4deg);
+  }
+  50% {
+    transform: translateX(6px) rotate(4deg);
+  }
+}
+
 /* 쓰다듬기/안아주기/뽀뽀하기 인터렉션 시 캐릭터 주변에 떠오르는 하트 모션 */
 @keyframes affectionHeartFloat {
   0% {
