@@ -121,6 +121,170 @@ const marketingConsent = {
   detail: "이벤트, 혜택, 신규 기능 안내 등 광고성 정보를 이메일로 받을 수 있습니다. 동의하지 않아도 가입과 핵심 서비스 이용에는 제한이 없고, 언제든 철회할 수 있습니다.",
 };
 
+// 약관 동의 팝업의 화살표(>) 클릭 시 여는 전문 페이지. Figma terms_1~7
+// (node-id=97-11467) 및 docs/features/miniu/회원가입-동의안내.md 기준.
+// [ ] 표시는 계약 확정 전 자리표시자, [법률 검토]는 시행 전 법률 검토가 필요함을 뜻하며
+// 두 표기 모두 최종 법률 검토 전까지는 그대로 유지한다.
+type ConsentDetailId = (typeof requiredConsentItems)[number]["id"] | "marketing";
+type TermsTextSection = { heading: string; body: string[] };
+type TermsTableSection = { heading: string; table: { headers: string[]; rows: string[][] } };
+type TermsSection = TermsTextSection | TermsTableSection;
+type TermsPage = { title: string; sections: TermsSection[] };
+
+const termsPages: Record<ConsentDetailId, TermsPage> = {
+  terms: {
+    title: "미니유 서비스 이용약관 동의",
+    sections: [
+      { heading: "목적", body: ["서비스 이용 계약의 체결 및 이행"] },
+      {
+        heading: "주요 내용",
+        body: [
+          "서비스 제공 범위, 회원의 의무(특히 연인 등 제3자의 정보를 입력·업로드할 때 정당한 권한을 갖추고, 필요한 경우 그 제3자의 동의를 받을 책임), 금지 행위, 게시물·기록의 관리, 서비스 변경·중단, 계약 해지 및 회원 탈퇴, 책임의 한계, 준거법 및 관할.",
+        ],
+      },
+      { heading: "동의 거부 권리", body: ["동의를 거부할 수 있으나, 거부 시 회원가입이 제한된다."] },
+      { heading: "법적 근거", body: ["이용 계약의 성립."] },
+    ],
+  },
+  privacyRequired: {
+    title: "개인정보 수집·이용 동의",
+    sections: [
+      {
+        heading: "수집·이용 내역",
+        table: {
+          headers: ["수집·이용 목적", "수집 항목", "보유 및 이용 기간"],
+          rows: [
+            ["회원 식별·인증, 부정 가입·이용 방지", "이메일, 비밀번호(암호화하여 저장), 이메일 인증 여부", "회원 탈퇴 후 30일까지 (이후 지체 없이 파기)"],
+            ["서비스 제공(프로필 표시, 커플 연결, 기록·프로필·채팅·문자 등)", "닉네임", "위와 같음"],
+            ["만 14세 미만 가입 제한(연령 확인)", "생년월일", "위와 같음 (연령 확인 목적 달성 후 최소화 검토)"],
+            ["커플 연결 및 관계 기반 기능 제공", "초대 코드, 연결 상대 계정 식별자, 사귄 날짜(D-day)", "커플 연결 해제 시까지 (해제 시 30일 유예 후 파기)"],
+            ["서비스 운영·보안, 장애 대응, 이용 문의 응대, 법령상 의무 이행", "서비스 이용기록, 접속 로그, 접속 IP, 기기·브라우저 정보, 접속 일시", "접속기록은 [1년] 보관 후 파기"],
+          ],
+        },
+      },
+      { heading: "동의 거부 권리 및 불이익", body: ["위 항목은 서비스 제공에 필요한 최소한의 정보다. 동의를 거부할 수 있으나, 거부하면 회원가입이 제한된다."] },
+      { heading: "제3자 제공", body: ["없음"] },
+      { heading: "처리위탁·국외 이전", body: ["개인정보 처리위탁 및 국외 이전 안내 항목 참조"] },
+      { heading: "법적 근거", body: ["「개인정보 보호법」 제15조제1항제1호(동의) 및 제4호(계약의 체결·이행)"] },
+    ],
+  },
+  processorTransferNotice: {
+    title: "개인정보 처리위탁 및 국외 이전 안내",
+    sections: [
+      {
+        heading: "처리위탁 현황",
+        table: {
+          headers: ["수탁 사업자", "위탁 업무", "처리 위치"],
+          rows: [
+            ["[클라우드 인프라 사업자명]", "서비스 서버·데이터베이스·저장소 운영", "[국내/국외]"],
+            ["[이메일 발송 사업자명]", "가입 인증·안내 메일 발송", "[국내/국외]"],
+            ["[AI 분석 API 사업자명] (예: OpenAI 등)", "기록·문자·대화 캡처의 분석(프로필 카드 생성, 말투 설정, AI 채팅 답변, 대표 문구 생성)", "국외(미국 등)"],
+          ],
+        },
+      },
+      {
+        heading: "국외 이전 내역 (「개인정보 보호법」 제28조의8)",
+        table: {
+          headers: ["이전되는 항목", "이전받는 국가", "이전 일시·방법", "이전받는 자 (명칭·연락처)", "이용 목적 및 보유·이용 기간"],
+          rows: [
+            [
+              "회원이 입력한 기록·사전 질문·문자 텍스트, 프로필 카드 내용, AI 채팅 입력, 말투 요약",
+              "[미국 등]",
+              "서비스 이용 중 해당 기능 실행 시, 암호화된 통신(HTTPS)으로 전송",
+              "[AI 사업자명, 연락처]",
+              "미니유의 요청 처리(분석 결과 반환)에 한함. 모델 학습·자체 목적 이용 없음. 처리 후 미보관 또는 남용 모니터링 목적 단기 보관 후 삭제",
+            ],
+            ["(해당 시) 회원가입 이메일 주소·인증 코드", "[이메일 사업자 국가]", "가입·인증 메일 발송 시", "[이메일 사업자명, 연락처]", "메일 발송."],
+          ],
+        },
+      },
+      {
+        heading: "동의 거부 방법·효과",
+        body: [
+          "위탁·국외 이전은 서비스의 핵심 기능(AI 분석, 안정적 운영)을 위한 것이므로, 확인을 거부하면 회원가입이 제한된다. AI 분석 기능만 별도로 원치 않는 경우의 처리는 대화·캡처의 AI 분석 및 국외 이전 동의 항목을 참조.",
+        ],
+      },
+      {
+        heading: "법적 성격",
+        body: [
+          "처리위탁은 개인정보 처리방침 공개(제26조)로, 국외 이전은 계약 이행 목적의 위탁·보관에 해당하여 처리방침 공개로 갈음(제28조의8제1항제3호)하는 것을 전제로 한다. 단, 대화·캡처의 국외 이전은 별도 동의를 받는 방안을 권고한다.",
+        ],
+      },
+    ],
+  },
+  aiAnalysisTransfer: {
+    title: "대화·캡처의 AI 분석 및 국외 이전 동의",
+    sections: [
+      { heading: "이전되는 항목", body: ["대화 캡처 이미지 원본, 대화 텍스트, 말투 요약 결과"] },
+      {
+        heading: "이전받는 국가/자/목적/기간",
+        body: ["개인정보 처리위탁 및 국외 이전 안내 항목의 국외 이전 표와 동일하며, 캡처 원본은 보관하되 목적이 달성되면 즉시 삭제한다."],
+      },
+      {
+        heading: "동의 거부 권리 및 불이익",
+        body: [
+          "이 동의는 AI 채팅·말투 설정 등 서비스 핵심 기능에 필요하므로, 거부하면 회원가입이 제한된다. 동의 후에도 대화 캡처를 올리지 않으면 캡처는 전송되지 않으며, 이 경우 미니유는 기본 말투로 동작한다.",
+        ],
+      },
+      { heading: "법적 근거", body: ["「개인정보 보호법」 제28조의8(국외 이전)"] },
+    ],
+  },
+  partnerInfoResponsibility: {
+    title: "연인 정보 입력 책임과 민감정보 미입력",
+    sections: [
+      {
+        heading: "처리하는 정보",
+        body: [
+          "회원이 입력·업로드하는 연인의 이름/닉네임, 취향, 좋아하는 것·싫어하는 것, 습관, 성향, 가치관, 일상생활 정보, 대화 내용, 대화 캡처, 사귄 날짜, 그리고 위 정보를 바탕으로 AI가 분류·추론·생성하는 정보(프로필 카드, 말투 요약 등).",
+        ],
+      },
+      {
+        heading: "이용 목적",
+        body: [
+          "연인에 대한 정보 기록·정리, AI 프로필 카드 생성, 미니유 말투 설정, AI 채팅, 아이템·공유 이미지 제공.",
+          "처리 방식: 개인정보 수집·이용 동의, 처리위탁 및 국외 이전 안내 항목과 동일(저장, AI 분석 위탁·국외 이전). 대화 캡처 원본은 즉시 삭제.",
+        ],
+      },
+      {
+        heading: "보유·이용 기간",
+        body: ["커플 연결 해제 시 삭제(30일 유예 후 파기), 회원이 개별 기록·카드를 삭제하면 즉시, 커플 연결이 성사되지 않은 채 방치되면 [30일] 후 파기."],
+      },
+      {
+        heading: "열람·삭제",
+        body: [
+          "회원이 남긴 기록·프로필 카드·AI 채팅은 회원 본인만 열람하며, 커플로 연결되어도 연인에게 공개되지 않는다. 연인 본인은 [개인정보 보호책임자 연락처]로 자신에 관한 기록의 삭제·처리정지를 요청할 수 있다.",
+        ],
+      },
+      {
+        heading: "회원의 책임",
+        body: ["회원은 연인의 정보를 입력·업로드할 정당한 권한을 갖추어야 하며, 필요한 경우 연인의 동의를 받아야 한다. 제3자의 권리 침해에 대한 책임은 회원에게 있다."],
+      },
+      { heading: "동의 거부 권리 및 불이익", body: ["확인을 거부하면 회원가입이 제한된다."] },
+      { heading: "법적 근거", body: ["회원과의 계약 이행 및 회원의 제3자 정보 제공. 제3자(연인) 동의 확보 책임은 회원에게 있다."] },
+    ],
+  },
+  age14OrOver: {
+    title: "만 14세 이상",
+    sections: [
+      {
+        heading: "안내 내용",
+        body: ["「개인정보 보호법」 제22조의2에 따라 만 14세 미만 아동의 개인정보는 법정대리인의 동의가 필요하다. 미니유는 만 14세 미만의 가입을 받지 않는다."],
+      },
+      { heading: "법적 근거", body: ["「개인정보 보호법」 제22조의2"] },
+    ],
+  },
+  marketing: {
+    title: "마케팅·광고성 정보 수신 동의",
+    sections: [
+      { heading: "목적", body: ["이벤트·혜택·업데이트 등 광고성 정보 발송"] },
+      { heading: "항목", body: ["이메일 주소, (발송 최적화를 위한) 서비스 이용 기록"] },
+      { heading: "보유·이용 기간", body: ["동의 철회 또는 회원 탈퇴 시까지. 2년마다 수신 동의 유지 여부를 확인한다."] },
+      { heading: "철회", body: ["언제든지 무료로 철회할 수 있으며, 수신한 메일의 수신거부 링크 또는 설정에서 철회할 수 있다."] },
+      { heading: "법적 근거", body: ["「정보통신망 이용촉진 및 정보보호 등에 관한 법률」 제50조"] },
+    ],
+  },
+};
+
 const MOCK_EMAIL_CODE = "123456";
 const EMAIL_CODE_SECONDS = 300;
 const PARTNER_PROFILE_FIELD_MAX_LENGTH = 60;
@@ -236,6 +400,7 @@ export default function Home() {
   const [showCoupleConnectedPopup, setShowCoupleConnectedPopup] = useState(false);
   const [showMinimiCreatedPopup, setShowMinimiCreatedPopup] = useState(false);
   const [showConsentSheet, setShowConsentSheet] = useState(false);
+  const [openTermsId, setOpenTermsId] = useState<ConsentDetailId | null>(null);
   const [emailVerifyStatus, setEmailVerifyStatus] = useState<EmailVerifyStatus>("idle");
   const [emailVerifyCode, setEmailVerifyCode] = useState("");
   const [emailVerifyError, setEmailVerifyError] = useState(false);
@@ -793,7 +958,18 @@ export default function Home() {
                               <input type="checkbox" className="sr-only" checked={form[item.id]} onChange={(event) => setForm({ ...form, [item.id]: event.target.checked })} />
                               <span className="signup-consent-tag signup-consent-tag--required text-label-kr">[필수]</span>
                               <span className="signup-consent-text text-label-kr">{item.shortLabel}</span>
-                              <Icon name="chevron" width={14} height={14} className="signup-consent-chevron" />
+                              <button
+                                type="button"
+                                className="-m-1.5 flex shrink-0 cursor-pointer items-center justify-center border-none bg-transparent p-1.5"
+                                aria-label={`${item.shortLabel} 전문 보기`}
+                                onClick={(event) => {
+                                  event.preventDefault();
+                                  event.stopPropagation();
+                                  setOpenTermsId(item.id);
+                                }}
+                              >
+                                <Icon name="chevron" width={14} height={14} className="signup-consent-chevron" />
+                              </button>
                             </label>
                           ))}
                           <label className="signup-consent-row">
@@ -801,7 +977,18 @@ export default function Home() {
                             <input type="checkbox" className="sr-only" checked={form.marketing} onChange={(event) => setForm({ ...form, marketing: event.target.checked })} />
                             <span className="signup-consent-tag signup-consent-tag--optional text-label-kr">[선택]</span>
                             <span className="signup-consent-text text-label-kr">{marketingConsent.shortLabel}</span>
-                            <Icon name="chevron" width={14} height={14} className="signup-consent-chevron" />
+                            <button
+                              type="button"
+                              className="-m-1.5 flex shrink-0 cursor-pointer items-center justify-center border-none bg-transparent p-1.5"
+                              aria-label={`${marketingConsent.shortLabel} 전문 보기`}
+                              onClick={(event) => {
+                                event.preventDefault();
+                                event.stopPropagation();
+                                setOpenTermsId("marketing");
+                              }}
+                            >
+                              <Icon name="chevron" width={14} height={14} className="signup-consent-chevron" />
+                            </button>
                           </label>
                         </div>
                       </div>
@@ -813,6 +1000,7 @@ export default function Home() {
                 </div>
               </div>
             )}
+            {openTermsId && <TermsDetailScreen termsId={openTermsId} onBack={() => setOpenTermsId(null)} />}
           </div>
         )}
         {mode === "login" && (
@@ -1520,6 +1708,77 @@ function AuthHeading({ title, description }: { title: string; description: strin
       <span className="eyebrow">MINIU ACCOUNT</span>
       <h1>{title}</h1>
       <p>{description}</p>
+    </div>
+  );
+}
+
+// 약관 동의 팝업의 화살표 클릭 시 여는 전문 페이지(Figma terms_1~7).
+// 길게 읽는 법적 전문이라 픽셀 폰트 대신 기존 --font-ui(가독성 우선 산세리프) 톤을 쓴다.
+function TermsDetailScreen({ termsId, onBack }: { termsId: ConsentDetailId; onBack: () => void }) {
+  const page = termsPages[termsId];
+  return (
+    <div
+      className="fixed inset-0 z-40 mx-auto flex w-full max-w-[var(--shell-width)] flex-col overflow-y-auto bg-[color:var(--color-common-100)]"
+      role="dialog"
+      aria-modal="true"
+      aria-label={page.title}
+    >
+      <div className="sticky top-0 z-10 flex h-[50px] shrink-0 items-center bg-[color:var(--color-common-100)] px-4">
+        <button type="button" onClick={onBack} aria-label="뒤로가기" className="flex cursor-pointer items-center justify-center border-none bg-transparent p-0">
+          <Image src="/terms/chevron-left.svg" alt="" width={24} height={24} />
+        </button>
+      </div>
+      <div className="flex flex-col gap-6 px-4 pt-[31px] pb-12" style={{ fontFamily: "var(--font-ui)" }}>
+        <h1 className="m-0 text-[24px] font-bold leading-[1.36] tracking-[-0.6px]" style={{ color: "var(--color-text-primary)" }}>
+          {page.title}
+        </h1>
+        <hr className="m-0 border-0 border-t border-[color:var(--color-border-tertiary)]" />
+        <ol className="m-0 flex list-decimal flex-col gap-4 pl-[21px] text-sm" style={{ color: "var(--color-text-secondary)" }}>
+          {page.sections.map((section, index) => (
+            <li key={index}>
+              <p className="m-0 font-bold leading-[1.5]">{section.heading}</p>
+              {"table" in section ? (
+                <div className="-mx-1 mt-2 overflow-x-auto">
+                  <table className="w-full min-w-[560px] border-collapse text-xs" style={{ color: "var(--color-text-quaternary)" }}>
+                    <thead>
+                      <tr>
+                        {section.table.headers.map((header, headerIndex) => (
+                          <th
+                            key={headerIndex}
+                            className="border border-[color:var(--color-border-tertiary)] bg-[color:var(--color-border-quaternary)] px-2 py-1.5 text-left font-bold"
+                            style={{ color: "var(--color-text-primary)" }}
+                          >
+                            {header}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {section.table.rows.map((row, rowIndex) => (
+                        <tr key={rowIndex}>
+                          {row.map((cell, cellIndex) => (
+                            <td key={cellIndex} className="border border-[color:var(--color-border-tertiary)] px-2 py-1.5 align-top">
+                              {cell}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="mt-1.5 flex flex-col gap-1">
+                  {section.body.map((line, lineIndex) => (
+                    <p key={lineIndex} className="m-0 leading-[1.54]" style={{ color: "var(--color-text-quaternary)" }}>
+                      {lineIndex === 0 ? `- ${line}` : line}
+                    </p>
+                  ))}
+                </div>
+              )}
+            </li>
+          ))}
+        </ol>
+      </div>
     </div>
   );
 }
