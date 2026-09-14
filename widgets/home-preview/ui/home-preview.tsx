@@ -267,7 +267,7 @@ export function HomePreview({
         </div>
       </div>
 
-      <div className="relative flex-1 flex flex-col items-stretch gap-4 px-4 pb-[110px] mt-[26px] overflow-y-auto">
+      <div className="relative flex-1 flex flex-col items-stretch gap-4 px-4 pb-[110px] mt-6 overflow-y-auto">
         <div className="flex flex-col w-full border-2 border-[#2b1f28] shadow-[2px_2px_0px_0px_rgba(17,17,17,0.2)]">
           <div className={TITLE_BAR}>
             <p>jisoo_cam.exe - [Live Garden Stage]</p>

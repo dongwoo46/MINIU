@@ -303,7 +303,7 @@ export function RecordPreview({
         </div>
       </div>
 
-      <div className="relative flex items-center justify-between h-[21px] mt-2 mx-4 font-pixel text-sm text-[#191f28]">
+      <div className="relative flex items-center justify-between h-[21px] mt-6 mx-4 font-pixel text-sm text-[#191f28]">
         <p className="m-0">
           총 <span className="text-[#db2777]">{records.length}</span>개 기록
         </p>

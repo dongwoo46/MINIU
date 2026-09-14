@@ -650,7 +650,7 @@ export function ProfilePreview({
 
       {loadError ? <p className="relative mx-4 mt-2 font-pixel text-xs text-[#db2777]">{loadError}</p> : null}
 
-      <div className="relative flex-1 flex flex-col gap-6 px-4 pb-[130px] mt-2 overflow-y-auto">
+      <div className="relative flex-1 flex flex-col gap-6 px-4 pb-[130px] mt-6 overflow-y-auto">
         <section className="flex flex-col gap-2.5">
           <p className="m-0 font-pixel text-base text-[#191f28] tracking-[0.16px]">연인 정보</p>
           <div className="flex items-start justify-between gap-2 bg-white border-2 border-[#2b1f28] shadow-[2px_2px_0px_rgba(0,0,0,0.2)] px-[18px] py-4">
