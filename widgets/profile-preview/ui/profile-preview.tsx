@@ -563,9 +563,11 @@ function ProfileFileWindow({
 
 export function ProfilePreview({
   onNavigate,
+  onOpenNotifications,
   devMock,
 }: {
   onNavigate?: (tab: PreviewTab) => void;
+  onOpenNotifications?: () => void;
   /** 개발용: 백엔드 호출 없이 연인 정보를 목업 데이터로 바로 보여줄 때만 사용. */
   devMock?: { partnerName: string; dDay: number | null; summary: string; unreadCount: number; cards: ProfileCardData[]; records: RecordEntry[] };
 }) {
@@ -616,7 +618,7 @@ export function ProfilePreview({
       <div className="relative flex items-center justify-between h-[59px] px-4">
         <p className="m-0 font-pixel text-[36px] text-white tracking-[-0.72px] leading-none whitespace-nowrap">MINIU</p>
         <div className="flex items-center gap-2">
-          <div className="relative w-9 h-9" aria-hidden="true">
+          <button type="button" className="relative w-9 h-9 border-0 bg-transparent p-0 cursor-pointer" aria-label="알림" onClick={onOpenNotifications}>
             <span className="absolute bg-white left-[14.5px] right-[14.5px] top-[6.33px] bottom-[27.33px]" />
             <span className="absolute bg-white left-[12.17px] right-[21.5px] top-[8.67px] bottom-[25px]" />
             <span className="absolute bg-white left-[21.5px] right-[12.17px] top-[8.67px] bottom-[25px]" />
@@ -629,7 +631,7 @@ export function ProfilePreview({
             <span className="absolute bg-white left-[20.33px] right-[13.33px] top-[25px] bottom-[8.67px]" />
             <span className="absolute bg-white left-[13.33px] right-[13.33px] top-[27.33px] bottom-[6.33px]" />
             {unreadCount > 0 && <span className="absolute -top-1 -right-1 font-pixel text-[9px] text-white bg-[#db2777] border border-white px-1">{unreadCount}</span>}
-          </div>
+          </button>
           <div className="relative w-9 h-9" aria-hidden="true">
             <div className="absolute left-[1.93px] top-[1.93px] w-[32.143px] h-[32.143px] overflow-hidden">
               <img className="absolute left-[-83.33%] top-[-71.46%] w-[268%] h-[244.92%] max-w-none" src="/minimi/gear-icon.png" alt="" />
@@ -648,7 +650,7 @@ export function ProfilePreview({
 
       {loadError ? <p className="relative mx-4 mt-2 font-pixel text-xs text-[#db2777]">{loadError}</p> : null}
 
-      <div className="relative flex-1 flex flex-col gap-6 px-4 pb-[130px] mt-2 overflow-y-auto">
+      <div className="relative flex-1 flex flex-col gap-6 px-4 pb-[130px] mt-6 overflow-y-auto">
         <section className="flex flex-col gap-2.5">
           <p className="m-0 font-pixel text-base text-[#191f28] tracking-[0.16px]">연인 정보</p>
           <div className="flex items-start justify-between gap-2 bg-white border-2 border-[#2b1f28] shadow-[2px_2px_0px_rgba(0,0,0,0.2)] px-[18px] py-4">

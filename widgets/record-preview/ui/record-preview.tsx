@@ -60,9 +60,11 @@ function describeApiError(error: unknown): string {
 
 export function RecordPreview({
   onNavigate,
+  onOpenNotifications,
   devMock,
 }: {
   onNavigate?: (tab: PreviewTab) => void;
+  onOpenNotifications?: () => void;
   /** 개발용: 백엔드 호출 없이 기록 목록을 목업 데이터로 바로 보여줄 때만 사용. */
   devMock?: {
     records: RecordEntry[];
@@ -271,7 +273,7 @@ export function RecordPreview({
       <div className="relative flex items-center justify-between h-[59px] px-4">
         <p className="m-0 font-pixel text-[36px] text-white tracking-[-0.72px] leading-none whitespace-nowrap">MINIU</p>
         <div className="flex items-center gap-2">
-          <div className="relative w-9 h-9" aria-hidden="true">
+          <button type="button" className="relative w-9 h-9 border-0 bg-transparent p-0 cursor-pointer" aria-label="알림" onClick={onOpenNotifications}>
             <span className="absolute bg-white left-[14.5px] right-[14.5px] top-[6.33px] bottom-[27.33px]" />
             <span className="absolute bg-white left-[12.17px] right-[21.5px] top-[8.67px] bottom-[25px]" />
             <span className="absolute bg-white left-[21.5px] right-[12.17px] top-[8.67px] bottom-[25px]" />
@@ -284,7 +286,7 @@ export function RecordPreview({
             <span className="absolute bg-white left-[20.33px] right-[13.33px] top-[25px] bottom-[8.67px]" />
             <span className="absolute bg-white left-[13.33px] right-[13.33px] top-[27.33px] bottom-[6.33px]" />
             {unreadCount > 0 && <span className="absolute -top-1 -right-1 font-pixel text-[9px] text-white bg-[#db2777] border border-white px-1">{unreadCount}</span>}
-          </div>
+          </button>
           <div className="relative w-9 h-9" aria-hidden="true">
             <div className="absolute left-[1.93px] top-[1.93px] w-[32.143px] h-[32.143px] overflow-hidden">
               <img className="absolute left-[-83.33%] top-[-71.46%] w-[268%] h-[244.92%] max-w-none" src="/minimi/gear-icon.png" alt="" />
@@ -301,7 +303,7 @@ export function RecordPreview({
         </div>
       </div>
 
-      <div className="relative flex items-center justify-between h-[21px] mt-2 mx-4 font-pixel text-sm text-[#191f28]">
+      <div className="relative flex items-center justify-between h-[21px] mt-6 mx-4 font-pixel text-sm text-[#191f28]">
         <p className="m-0">
           총 <span className="text-[#db2777]">{records.length}</span>개 기록
         </p>
