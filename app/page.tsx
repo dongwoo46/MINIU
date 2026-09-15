@@ -12,6 +12,7 @@ import { LetterPreview } from "@/widgets/letter-preview";
 import { NotificationPreview } from "@/widgets/notification-preview";
 import { ProfilePreview } from "@/widgets/profile-preview";
 import { RecordPreview } from "@/widgets/record-preview";
+import { SettingsPreview } from "@/widgets/settings-preview";
 import { MobileShell } from "@/widgets/mobile-shell";
 import type { HouseData, ChatQuota, RecordEntry, NotificationData, ProfileCardData } from "@/shared/api/miniu";
 
@@ -391,6 +392,7 @@ const preQuestionLabels: Record<PreQuestionKey, { label: string; placeholder: st
 export default function Home() {
   const [tab, setTab] = useState<PreviewTab>("home");
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const [toast, setToast] = useState("");
   const [mode, setMode] = useState<AuthMode>("login");
   const [showPassword, setShowPassword] = useState(false);
@@ -417,9 +419,10 @@ export default function Home() {
   const [emailVerifyError, setEmailVerifyError] = useState(false);
   const [emailVerifySeconds, setEmailVerifySeconds] = useState(EMAIL_CODE_SECONDS);
   const [me, setMe] = useState<MeData | null>(null);
-  const [devHomePreview, setDevHomePreview] = useState(false);
+  const [devHomePreview, setDevHomePreview] = useState(true);
   const [devTab, setDevTab] = useState<PreviewTab>("home");
   const [devShowNotifications, setDevShowNotifications] = useState(false);
+  const [devShowSettings, setDevShowSettings] = useState(false);
   const [mockRecords, setMockRecords] = useState<RecordEntry[]>(INITIAL_MOCK_RECORDS);
   const [mockProfileCards, setMockProfileCards] = useState<ProfileCardData[]>(INITIAL_MOCK_PROFILE_CARDS);
   const [mockNotifications, setMockNotifications] = useState<NotificationData[]>(INITIAL_MOCK_NOTIFICATIONS);
@@ -825,10 +828,17 @@ export default function Home() {
 
     return (
       <MobileShell active={devTab} onTabChange={setDevTab} hideChrome={devPixelChrome}>
-        {devShowNotifications ? (
+        {devShowSettings ? (
+          <SettingsPreview
+            onBack={() => setDevShowSettings(false)}
+            onLogout={() => setDevShowSettings(false)}
+            devMock={{ partnerName: "지수 미니미", dDay: 324, connected: true }}
+          />
+        ) : devShowNotifications ? (
           <NotificationPreview
             onNavigate={(next) => { setDevShowNotifications(false); setDevTab(next); }}
             onBack={() => setDevShowNotifications(false)}
+            onOpenSettings={() => { setDevShowNotifications(false); setDevShowSettings(true); }}
             devMock={{
               notifications: mockNotifications,
               partnerName: "지수 미니미",
@@ -841,6 +851,7 @@ export default function Home() {
               <HomePreview
                 onNavigate={setDevTab}
                 onOpenNotifications={() => setDevShowNotifications(true)}
+                onOpenSettings={() => setDevShowSettings(true)}
                 devMock={{ house: mockHouse, quota: mockQuota, unreadCount: mockNotifications.filter((n) => !n.isRead).length, relationshipStartedOn: "2025-01-01" }}
               />
             )}
@@ -848,6 +859,7 @@ export default function Home() {
               <RecordPreview
                 onNavigate={setDevTab}
                 onOpenNotifications={() => setDevShowNotifications(true)}
+                onOpenSettings={() => setDevShowSettings(true)}
                 devMock={{ records: mockRecords, unreadCount: mockNotifications.filter((n) => !n.isRead).length, partnerName: "지수 미니미", onCreateRecord: handleMockRecordCreate, onDeleteRecord: handleMockRecordDelete }}
               />
             )}
@@ -856,6 +868,7 @@ export default function Home() {
               <ProfilePreview
                 onNavigate={setDevTab}
                 onOpenNotifications={() => setDevShowNotifications(true)}
+                onOpenSettings={() => setDevShowSettings(true)}
                 devMock={{ partnerName: "지수 미니미", dDay: 324, summary: "놀러다니는 것을 좋아하고, 잘 챙겨주는 연인이에요", unreadCount: mockNotifications.filter((n) => !n.isRead).length, cards: mockProfileCards, records: mockRecords }}
               />
             )}
@@ -1591,14 +1604,24 @@ export default function Home() {
     <MobileShell active={tab} onTabChange={(next) => { setTab(next); setToast(""); }} hideChrome={pixelChromeTabs}>
       {!pixelChromeTabs && <div className="auth-user-strip"><span>{user.name}님</span><button type="button" onClick={logout}>로그아웃</button></div>}
       {!pixelChromeTabs && !me.couple && <Surface className="onboarding-banner"><strong>연인과 연결하기</strong><span>홈은 볼 수 있지만 기록·프로필·문자·채팅은 연결 후 열려요.</span></Surface>}
-      {showNotifications ? (
-        <NotificationPreview onNavigate={(next) => { setShowNotifications(false); setTab(next); }} onBack={() => setShowNotifications(false)} />
+      {showSettings ? (
+        <SettingsPreview
+          onBack={() => setShowSettings(false)}
+          onLogout={() => { setShowSettings(false); logout(); }}
+          onAccountDeleted={() => { setShowSettings(false); setMe(null); setMode("login"); setToast("계정이 삭제됐어요."); }}
+        />
+      ) : showNotifications ? (
+        <NotificationPreview
+          onNavigate={(next) => { setShowNotifications(false); setTab(next); }}
+          onBack={() => setShowNotifications(false)}
+          onOpenSettings={() => { setShowNotifications(false); setShowSettings(true); }}
+        />
       ) : (
         <>
-          {tab === "home" && <HomePreview onNavigate={setTab} onOpenNotifications={() => setShowNotifications(true)} />}
-          {tab === "record" && <RecordPreview onNavigate={setTab} onOpenNotifications={() => setShowNotifications(true)} />}
+          {tab === "home" && <HomePreview onNavigate={setTab} onOpenNotifications={() => setShowNotifications(true)} onOpenSettings={() => setShowSettings(true)} />}
+          {tab === "record" && <RecordPreview onNavigate={setTab} onOpenNotifications={() => setShowNotifications(true)} onOpenSettings={() => setShowSettings(true)} />}
           {tab === "letter" && <LetterPreview />}
-          {tab === "profile" && <ProfilePreview onNavigate={setTab} onOpenNotifications={() => setShowNotifications(true)} />}
+          {tab === "profile" && <ProfilePreview onNavigate={setTab} onOpenNotifications={() => setShowNotifications(true)} onOpenSettings={() => setShowSettings(true)} />}
         </>
       )}
       {showCoupleJustConnectedPopup && <CoupleConnectedPopup onClose={() => setShowCoupleJustConnectedPopup(false)} />}
