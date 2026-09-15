@@ -831,7 +831,7 @@ export default function Home() {
         {devShowSettings ? (
           <SettingsPreview
             onBack={() => setDevShowSettings(false)}
-            onLogout={() => setDevShowSettings(false)}
+            onLogout={() => { setDevShowSettings(false); setDevHomePreview(false); }}
             devMock={{ partnerName: "지수 미니미", dDay: 324, connected: true }}
           />
         ) : devShowNotifications ? (
@@ -1609,6 +1609,11 @@ export default function Home() {
           onBack={() => setShowSettings(false)}
           onLogout={() => { setShowSettings(false); logout(); }}
           onAccountDeleted={() => { setShowSettings(false); setMe(null); setMode("login"); setToast("계정이 삭제됐어요."); }}
+          onDisconnected={async () => {
+            setShowSettings(false);
+            await loadMe();
+            setToast("커플 연결이 해제됐어요. 기록과 프로필은 30일 동안 보관돼요.");
+          }}
         />
       ) : showNotifications ? (
         <NotificationPreview
