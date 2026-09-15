@@ -42,7 +42,7 @@ export function NotificationPreview({
   const [sortOrder, setSortOrder] = useState<"latest" | "oldest">("latest");
   const [loadError, setLoadError] = useState("");
   const [partnerName, setPartnerName] = useState(devMock?.partnerName ?? "연인");
-  const [showHousePopup, setShowHousePopup] = useState(false);
+  const [housePopupNotificationId, setHousePopupNotificationId] = useState<string | null>(null);
   const notificationsRef = useRef(notifications);
 
   useEffect(() => {
@@ -103,12 +103,28 @@ export function NotificationPreview({
   function handleCardClick(notification: NotificationData) {
     const category = CATEGORY[notification.type];
     if (category?.opensHousePopup) {
-      setShowHousePopup(true);
+      setHousePopupNotificationId(notification.id);
       return;
     }
     if (category?.targetTab) {
       onNavigate?.(category.targetTab);
     }
+  }
+
+  // 애정 시그널 카드를 눌러 집 팝업을 닫으면, 화면을 나갈 때까지 기다리지 않고
+  // 그 자리에서 바로 그 카드를 읽음 처리해 비활성화(흐림)한다.
+  function closeHousePopup() {
+    const id = housePopupNotificationId;
+    setHousePopupNotificationId(null);
+    if (!id) return;
+    setNotifications((prev) => prev.map((item) => (item.id === id ? { ...item, isRead: true } : item)));
+    if (devMock) {
+      devMock.onRead?.([id]);
+      return;
+    }
+    markNotificationRead(id).catch(() => {
+      // 부수 효과라 실패해도 화면에 보여줄 곳이 없다 — 다음 조회 때 다시 안 읽음으로 보이는 정도로 그친다.
+    });
   }
 
   const sorted = [...notifications].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
@@ -192,7 +208,7 @@ export function NotificationPreview({
         })}
       </div>
 
-      {showHousePopup && <HousePopup partnerName={partnerName} onClose={() => setShowHousePopup(false)} devMock={Boolean(devMock)} />}
+      {housePopupNotificationId && <HousePopup partnerName={partnerName} onClose={closeHousePopup} devMock={Boolean(devMock)} />}
     </div>
   );
 }
