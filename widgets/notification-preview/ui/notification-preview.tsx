@@ -29,10 +29,12 @@ function formatRelativeTime(iso: string): string {
 export function NotificationPreview({
   onNavigate,
   onBack,
+  onOpenSettings,
   devMock,
 }: {
   onNavigate?: (tab: PreviewTab) => void;
   onBack?: () => void;
+  onOpenSettings?: () => void;
   /** 개발용: 백엔드 호출 없이 알림 목록을 목업 데이터로 바로 보여줄 때만 사용. */
   devMock?: { notifications: NotificationData[]; partnerName?: string; onRead?: (ids: string[]) => void };
 }) {
@@ -40,7 +42,7 @@ export function NotificationPreview({
   const [sortOrder, setSortOrder] = useState<"latest" | "oldest">("latest");
   const [loadError, setLoadError] = useState("");
   const [partnerName, setPartnerName] = useState(devMock?.partnerName ?? "연인");
-  const [showHousePopup, setShowHousePopup] = useState(false);
+  const [housePopupNotificationId, setHousePopupNotificationId] = useState<string | null>(null);
   const notificationsRef = useRef(notifications);
 
   useEffect(() => {
@@ -101,12 +103,28 @@ export function NotificationPreview({
   function handleCardClick(notification: NotificationData) {
     const category = CATEGORY[notification.type];
     if (category?.opensHousePopup) {
-      setShowHousePopup(true);
+      setHousePopupNotificationId(notification.id);
       return;
     }
     if (category?.targetTab) {
       onNavigate?.(category.targetTab);
     }
+  }
+
+  // 애정 시그널 카드를 눌러 집 팝업을 닫으면, 화면을 나갈 때까지 기다리지 않고
+  // 그 자리에서 바로 그 카드를 읽음 처리해 비활성화(흐림)한다.
+  function closeHousePopup() {
+    const id = housePopupNotificationId;
+    setHousePopupNotificationId(null);
+    if (!id) return;
+    setNotifications((prev) => prev.map((item) => (item.id === id ? { ...item, isRead: true } : item)));
+    if (devMock) {
+      devMock.onRead?.([id]);
+      return;
+    }
+    markNotificationRead(id).catch(() => {
+      // 부수 효과라 실패해도 화면에 보여줄 곳이 없다 — 다음 조회 때 다시 안 읽음으로 보이는 정도로 그친다.
+    });
   }
 
   const sorted = [...notifications].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
@@ -123,20 +141,7 @@ export function NotificationPreview({
           <img src="/terms/chevron-left.svg" alt="" width={28} height={28} style={{ filter: "brightness(0) invert(1)" }} />
         </button>
         <div className="flex items-center gap-2">
-          <div className="relative w-9 h-9" aria-hidden="true">
-            <span className="absolute bg-white left-[14.5px] right-[14.5px] top-[6.33px] bottom-[27.33px]" />
-            <span className="absolute bg-white left-[12.17px] right-[21.5px] top-[8.67px] bottom-[25px]" />
-            <span className="absolute bg-white left-[21.5px] right-[12.17px] top-[8.67px] bottom-[25px]" />
-            <span className="absolute bg-white left-[9.83px] right-[23.83px] top-[11px] bottom-[16.83px]" />
-            <span className="absolute bg-white left-[23.83px] right-[9.83px] top-[11px] bottom-[16.83px]" />
-            <span className="absolute bg-white left-[7.5px] right-[26.17px] top-[19.17px] bottom-[12.17px]" />
-            <span className="absolute bg-white left-[26.17px] right-[7.5px] top-[19.17px] bottom-[12.17px]" />
-            <span className="absolute bg-white left-[7.5px] right-[7.5px] top-[21.5px] bottom-[12.17px]" />
-            <span className="absolute bg-white left-[13.33px] right-[20.33px] top-[25px] bottom-[8.67px]" />
-            <span className="absolute bg-white left-[20.33px] right-[13.33px] top-[25px] bottom-[8.67px]" />
-            <span className="absolute bg-white left-[13.33px] right-[13.33px] top-[27.33px] bottom-[6.33px]" />
-          </div>
-          <div className="relative w-9 h-9" aria-hidden="true">
+          <button type="button" className="relative w-9 h-9 border-0 bg-transparent p-0 cursor-pointer" aria-label="설정" onClick={onOpenSettings}>
             <div className="absolute left-[1.93px] top-[1.93px] w-[32.143px] h-[32.143px] overflow-hidden">
               <img className="absolute left-[-83.33%] top-[-71.46%] w-[268%] h-[244.92%] max-w-none" src="/minimi/gear-icon.png" alt="" />
             </div>
@@ -148,7 +153,7 @@ export function NotificationPreview({
             <span className="absolute bg-white left-[14.91px] top-[20.1px] w-[1.531px] h-[1.529px]" />
             <span className="absolute bg-white left-[14.91px] top-[14.83px] w-[1.531px] h-[1.529px]" />
             <span className="absolute bg-white left-[16.44px] top-[21.39px] w-[3.601px] h-[1.957px]" />
-          </div>
+          </button>
         </div>
       </div>
 
@@ -203,7 +208,7 @@ export function NotificationPreview({
         })}
       </div>
 
-      {showHousePopup && <HousePopup partnerName={partnerName} onClose={() => setShowHousePopup(false)} devMock={Boolean(devMock)} />}
+      {housePopupNotificationId && <HousePopup partnerName={partnerName} onClose={closeHousePopup} devMock={Boolean(devMock)} />}
     </div>
   );
 }
