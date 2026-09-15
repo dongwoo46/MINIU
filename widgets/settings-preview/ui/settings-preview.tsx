@@ -123,11 +123,14 @@ export function SettingsPreview({
   onBack,
   onLogout,
   onAccountDeleted,
+  onDisconnected,
   devMock,
 }: {
   onBack?: () => void;
   onLogout?: () => void;
   onAccountDeleted?: () => void;
+  /** 커플 연결 해제가 완료된 뒤 호출된다. 실제 연결 화면에서는 재연동(초대 코드) 화면으로 이동시키는 용도로 쓴다. */
+  onDisconnected?: () => void;
   /** 개발용: 백엔드 호출 없이 연인/알림 설정을 목업 데이터로 바로 보여줄 때만 사용. */
   devMock?: { partnerName: string; dDay: number | null; connected: boolean };
 }) {
@@ -205,13 +208,12 @@ export function SettingsPreview({
       setConnected(false);
       setView("list");
       showNotice("커플 연결이 해제됐어요.");
+      onDisconnected?.();
       return;
     }
     try {
       await unlinkCouple();
-      setConnected(false);
-      setView("list");
-      showNotice("커플 연결이 해제됐어요.");
+      onDisconnected?.();
     } catch (error) {
       setActionError(describeApiError(error));
     }
